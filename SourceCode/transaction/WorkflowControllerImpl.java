@@ -24,26 +24,6 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     protected ResourceManager rmCustomers = null;
     protected TransactionManager tm = null;
 
-    public static void main(String args[]) {
-        System.setSecurityManager(new RMISecurityManager());
-
-        String rmiPort = System.getProperty("rmiPort");
-        if (rmiPort == null) {
-            rmiPort = "";
-        } else if (!rmiPort.equals("")) {
-            rmiPort = "//:" + rmiPort + "/";
-        }
-
-        try {
-            WorkflowControllerImpl obj = new WorkflowControllerImpl();
-            Naming.rebind(rmiPort + WorkflowController.RMIName, obj);
-            System.out.println("WC bound");
-        } catch (Exception e) {
-            System.err.println("WC not bound:" + e);
-            System.exit(1);
-        }
-    }
-
     public WorkflowControllerImpl() throws RemoteException {
         flightcounter = 0;
         flightprice = 0;
@@ -63,6 +43,25 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         }
     }
 
+    public static void main(String args[]) {
+        System.setSecurityManager(new RMISecurityManager());
+
+        String rmiPort = System.getProperty("rmiPort");
+        if (rmiPort == null) {
+            rmiPort = "";
+        } else if (!rmiPort.equals("")) {
+            rmiPort = "//:" + rmiPort + "/";
+        }
+
+        try {
+            WorkflowControllerImpl obj = new WorkflowControllerImpl();
+            Naming.rebind(rmiPort + WorkflowController.RMIName, obj);
+            System.out.println("WC bound");
+        } catch (Exception e) {
+            System.err.println("WC not bound:" + e);
+            System.exit(1);
+        }
+    }
 
     // TRANSACTION INTERFACE
     public int start() throws RemoteException {
@@ -171,10 +170,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         return true;
     }
 
-    public boolean reserveItinerary(int xid, String custName, List flightNumList, String location, boolean needCar, boolean needRoom)
-            throws RemoteException,
-            TransactionAbortedException,
-            InvalidTransactionException {
+    public boolean reserveItinerary(int xid, String custName, List flightNumList, String location, boolean needCar, boolean needRoom) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         return true;
     }
 

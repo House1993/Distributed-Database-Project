@@ -1,4 +1,8 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
+
+import java.rmi.Naming;
+import java.rmi.RMISecurityManager;
+import java.rmi.RemoteException;
 
 /**
  * Transaction Manager for the Distributed Travel Reservation System.

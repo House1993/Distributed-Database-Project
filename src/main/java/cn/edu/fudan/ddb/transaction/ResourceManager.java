@@ -1,4 +1,7 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
 /**
  * Interface for the Resource Manager of the Distributed Travel

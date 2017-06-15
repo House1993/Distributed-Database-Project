@@ -1,4 +1,11 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
+
+import cn.edu.fudan.ddb.transaction.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.transaction.exception.TransactionAbortedException;
+
+import java.rmi.Remote;
+import java.rmi.RemoteException;
+import java.util.List;
 
 /**
  * Interface for the Workflow Controller of the Distributed Travel

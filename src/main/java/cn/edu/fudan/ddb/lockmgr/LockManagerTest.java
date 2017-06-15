@@ -1,4 +1,6 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr;
+
+import cn.edu.fudan.ddb.lockmgr.exception.DeadlockException;
 
 import java.util.StringTokenizer;
 

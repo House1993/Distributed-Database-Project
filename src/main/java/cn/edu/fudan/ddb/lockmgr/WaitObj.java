@@ -1,4 +1,4 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr;
 
 public class WaitObj extends DataObj {
 

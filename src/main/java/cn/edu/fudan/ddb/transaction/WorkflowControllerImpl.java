@@ -1,4 +1,7 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
+
+import cn.edu.fudan.ddb.transaction.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.transaction.exception.TransactionAbortedException;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;

@@ -1,4 +1,4 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr.exception;
 
 /**
  * Thrown to indicate that the transaction is deadlocked and should be aborted.

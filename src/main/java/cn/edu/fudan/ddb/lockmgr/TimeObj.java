@@ -1,4 +1,4 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr;
 
 import java.util.Date;
 

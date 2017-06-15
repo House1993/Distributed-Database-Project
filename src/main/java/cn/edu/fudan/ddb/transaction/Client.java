@@ -1,4 +1,6 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
+
+import java.rmi.Naming;
 
 /**
  * A toy client of the Distributed Travel Reservation System.

@@ -1,4 +1,4 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr.exception;
 
 /*
     The transaction requested a lock that it already had.

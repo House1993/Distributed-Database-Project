@@ -1,4 +1,4 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr;
 
 public class DataObj extends TrxnObj {
     // The data members inherited are

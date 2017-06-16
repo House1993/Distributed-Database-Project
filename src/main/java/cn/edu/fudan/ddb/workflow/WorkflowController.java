@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.transaction;
+package cn.edu.fudan.ddb.workflow;
 
 import cn.edu.fudan.ddb.transaction.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.transaction.exception.TransactionAbortedException;

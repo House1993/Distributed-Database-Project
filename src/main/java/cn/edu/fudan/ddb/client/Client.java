@@ -1,4 +1,6 @@
-package cn.edu.fudan.ddb.transaction;
+package cn.edu.fudan.ddb.client;
+
+import cn.edu.fudan.ddb.workflow.WorkflowController;
 
 import java.rmi.Naming;
 

@@ -1,5 +1,7 @@
 package cn.edu.fudan.ddb.transaction;
 
+import cn.edu.fudan.ddb.resource.ResourceManager;
+
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 

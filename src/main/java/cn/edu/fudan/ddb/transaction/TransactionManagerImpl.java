@@ -1,4 +1,4 @@
-import cn.edu.fudan.ddb.transaction.ResourceManager;
+import cn.edu.fudan.ddb.resource.ResourceManager;
 import cn.edu.fudan.ddb.transaction.TransactionManager;
 
 import java.rmi.Naming;

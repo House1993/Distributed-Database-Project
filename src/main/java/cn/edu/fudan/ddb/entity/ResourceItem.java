@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 import cn.edu.fudan.ddb.exception.InvalidIndexException;
 
@@ -8,7 +8,7 @@ public abstract class ResourceItem implements Cloneable, Serializable {
 
     private boolean isDeleted = false;
 
-    boolean isDeleted() {
+    public boolean isDeleted() {
         return isDeleted;
     }
 

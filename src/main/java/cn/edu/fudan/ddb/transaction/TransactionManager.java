@@ -21,7 +21,7 @@ public interface TransactionManager extends Remote {
      * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has been committed/aborted
      * @throws RemoteException
      */
-    public void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
+    void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
 
     /**
      * start a new transaction with a unique id
@@ -30,7 +30,7 @@ public interface TransactionManager extends Remote {
      * @return true for a unique id, false for repeated id
      * @throws RemoteException
      */
-    public boolean start(int xid) throws RemoteException;
+    void start(int xid) throws RemoteException;
 
     /**
      * attempt to commit the transaction id = @xid
@@ -42,7 +42,7 @@ public interface TransactionManager extends Remote {
      * @return true for commit successfully, false oppositely
      * @throws RemoteException
      */
-    public boolean commit(int xid) throws RemoteException;
+    boolean commit(int xid) throws RemoteException;
 
     /**
      * abort transaction id = @xid
@@ -50,7 +50,7 @@ public interface TransactionManager extends Remote {
      * @param xid transaction id
      * @throws RemoteException
      */
-    public void abort(int xid) throws RemoteException;
+    void abort(int xid) throws RemoteException;
 
     /**
      * check a transaction id = @xid whether it is committed
@@ -63,5 +63,5 @@ public interface TransactionManager extends Remote {
 
     public boolean dieNow() throws RemoteException;
 
-    public static final String RMIName = "TM";
+    String RMIName = "TM";
 }

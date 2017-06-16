@@ -2,8 +2,8 @@ package cn.edu.fudan.ddb.workflow;
 
 import cn.edu.fudan.ddb.resource.ResourceManager;
 import cn.edu.fudan.ddb.transaction.TransactionManager;
-import cn.edu.fudan.ddb.transaction.exception.InvalidTransactionException;
-import cn.edu.fudan.ddb.transaction.exception.TransactionAbortedException;
+import cn.edu.fudan.ddb.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;

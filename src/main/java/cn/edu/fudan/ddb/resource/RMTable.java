@@ -1,8 +1,8 @@
 package cn.edu.fudan.ddb.resource;
 
 import cn.edu.fudan.ddb.lockmgr.LockManager;
-import cn.edu.fudan.ddb.lockmgr.exception.DeadlockException;
-import cn.edu.fudan.ddb.resource.item.ResourceItem;
+import cn.edu.fudan.ddb.exception.DeadlockException;
+import cn.edu.fudan.ddb.entity.ResourceItem;
 
 import java.io.Serializable;
 import java.util.Hashtable;
@@ -11,15 +11,15 @@ import java.util.Set;
 
 public class RMTable implements Serializable {
 
-    protected Hashtable<Object, ResourceItem> table = new Hashtable<>();
+    private Hashtable<Object, ResourceItem> table = new Hashtable<>();
 
-    transient protected RMTable parent;
+    private transient RMTable parent;
 
-    protected Hashtable<Object, Integer> locks = new Hashtable<>();
+    private Hashtable<Object, Integer> locks = new Hashtable<>();
 
-    transient protected LockManager lm;
+    private transient LockManager lm;
 
-    protected String tablename;
+    private String tablename;
 
     protected int xid;
 
@@ -43,23 +43,25 @@ public class RMTable implements Serializable {
     }
 
     public void relockAll() throws DeadlockException {
-        for (Object o : locks.entrySet()) {
-            Map.Entry entry = (Map.Entry) o;
-            if (!lm.lock(xid, tablename + ":" + entry.getKey().toString(), (Integer) entry.getValue()))
+        for (Map.Entry<Object, Integer> entry : locks.entrySet()) {
+            if (!lm.lock(xid, tablename + ":" + entry.getKey().toString(), entry.getValue())) {
                 throw new RuntimeException();
+            }
         }
     }
 
     public void lock(Object key, int lockType) throws DeadlockException {
-        if (!lm.lock(xid, tablename + ":" + key.toString(), lockType))
+        if (!lm.lock(xid, tablename + ":" + key.toString(), lockType)) {
             throw new RuntimeException();
+        }
         locks.put(key, lockType);
     }
 
     public ResourceItem get(Object key) {
         ResourceItem item = table.get(key);
-        if (item == null && parent != null)
+        if (item == null && parent != null) {
             item = parent.get(key);
+        }
         return item;
     }
 

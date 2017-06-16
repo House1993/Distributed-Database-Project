@@ -1,10 +1,13 @@
 package cn.edu.fudan.ddb.exception;
 
 /**
- * Created by house on 6/17/17.
+ * The transaction identifier that was passed is not valid.
+ * Either the client supplied a bogus Xid, or the transaction
+ * has already committed or aborted and cannot be continued.
  */
 public class InvalidTransactionException extends Exception {
-    public InvalidTransactionException(int xid) {
-        super("invalid transaction: " + xid);
+
+    public InvalidTransactionException(int Xid, String msg) {
+        super("The transaction " + Xid + " is invalid:" + msg);
     }
 }

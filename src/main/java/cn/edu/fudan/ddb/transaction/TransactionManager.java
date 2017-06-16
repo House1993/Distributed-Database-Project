@@ -19,7 +19,7 @@ public interface TransactionManager extends Remote {
      * @param rm  RM
      * @throws RemoteException
      */
-    public void enlist(int xid, ResourceManager rm) throws RemoteException;
+    void enlist(int xid, ResourceManager rm) throws RemoteException;
 
     /**
      * start a new transaction
@@ -27,7 +27,7 @@ public interface TransactionManager extends Remote {
      * @param xid transaction id
      * @throws RemoteException
      */
-    public void start(int xid) throws RemoteException;
+    void start(int xid) throws RemoteException;
 
     /**
      * for transaction id = @xid, RM = @rm prepare to commit
@@ -36,7 +36,7 @@ public interface TransactionManager extends Remote {
      * @param rm  RM
      * @throws RemoteException
      */
-    public void prepare(int xid, ResourceManager rm) throws RemoteException;
+    void prepare(int xid, ResourceManager rm) throws RemoteException;
 
     /**
      * attempt to commit the transaction id = @xid
@@ -48,7 +48,7 @@ public interface TransactionManager extends Remote {
      * @return commit successfully or not
      * @throws RemoteException
      */
-    public boolean commit(int xid) throws RemoteException;
+    boolean commit(int xid) throws RemoteException;
 
     /**
      * abort transaction id = @xid
@@ -56,9 +56,9 @@ public interface TransactionManager extends Remote {
      * @param xid transaction id
      * @throws RemoteException
      */
-    public void abort(int xid) throws RemoteException;
+    void abort(int xid) throws RemoteException;
 
-    public boolean dieNow() throws RemoteException;
+    boolean dieNow() throws RemoteException;
 
-    public static final String RMIName = "TM";
+    String RMIName = "TM";
 }

@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 import cn.edu.fudan.ddb.exception.InvalidIndexException;
 
@@ -7,7 +7,7 @@ import cn.edu.fudan.ddb.exception.InvalidIndexException;
  */
 public class Flight extends ResourceItem {
 
-    public static final String INDEX_FLIGHTNUM = "flightNum";
+    public static final String INDEX_NAME = "flightNum";
 
     private String flightNum;
 
@@ -68,7 +68,7 @@ public class Flight extends ResourceItem {
 
     @Override
     public Object getIndex(String indexName) throws InvalidIndexException {
-        if (indexName.equals(INDEX_FLIGHTNUM)) {
+        if (indexName.equals(INDEX_NAME)) {
             return flightNum;
         } else {
             throw new InvalidIndexException(indexName);

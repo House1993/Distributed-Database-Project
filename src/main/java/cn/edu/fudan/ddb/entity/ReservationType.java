@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 /**
  * Created by Jiaye Wu on 17-6-16.

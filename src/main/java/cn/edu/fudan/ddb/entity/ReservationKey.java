@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 import java.io.Serializable;
 

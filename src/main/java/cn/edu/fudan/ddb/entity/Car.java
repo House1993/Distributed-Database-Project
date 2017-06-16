@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 import cn.edu.fudan.ddb.exception.InvalidIndexException;
 
@@ -7,7 +7,7 @@ import cn.edu.fudan.ddb.exception.InvalidIndexException;
  */
 public class Car extends ResourceItem {
 
-    public static final String INDEX_LOCATION = "location";
+    public static final String INDEX_NAME = "location";
 
     private String location;
 
@@ -68,7 +68,7 @@ public class Car extends ResourceItem {
 
     @Override
     public Object getIndex(String indexName) throws InvalidIndexException {
-        if (indexName.equals(INDEX_LOCATION)) {
+        if (indexName.equals(INDEX_NAME)) {
             return location;
         } else {
             throw new InvalidIndexException(indexName);

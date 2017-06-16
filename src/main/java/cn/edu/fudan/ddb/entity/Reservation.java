@@ -1,10 +1,10 @@
-package cn.edu.fudan.ddb.resource.item;
+package cn.edu.fudan.ddb.entity;
 
 import cn.edu.fudan.ddb.exception.InvalidIndexException;
 
 public class Reservation extends ResourceItem {
 
-    public static final String INDEX_CUSTNAME = "custName";
+    public static final String INDEX_NAME = "custName";
 
     private String custName;
 
@@ -54,7 +54,7 @@ public class Reservation extends ResourceItem {
 
     @Override
     public Object getIndex(String indexName) throws InvalidIndexException {
-        if (indexName.equals(INDEX_CUSTNAME)) {
+        if (indexName.equals(INDEX_NAME)) {
             return custName;
         } else {
             throw new InvalidIndexException(indexName);

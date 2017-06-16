@@ -1,7 +1,7 @@
 package cn.edu.fudan.ddb.workflow;
 
-import cn.edu.fudan.ddb.transaction.exception.InvalidTransactionException;
-import cn.edu.fudan.ddb.transaction.exception.TransactionAbortedException;
+import cn.edu.fudan.ddb.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -40,7 +40,7 @@ public interface WorkflowController extends Remote {
     /**
      * The RMI name a WorkflowController binds to.
      */
-    public static final String RMIName = "WC";
+    String RMIName = "WC";
 
     /**
      * Start a new transaction, and return its transaction id.
@@ -48,7 +48,7 @@ public interface WorkflowController extends Remote {
      * @return A unique transaction ID > 0.  Return <=0 if server is not accepting new transactions.
      * @throws RemoteException on communications failure.
      */
-    public int start() throws RemoteException;
+    int start() throws RemoteException;
 
     /**
      * Commit transaction.
@@ -59,7 +59,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean commit(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean commit(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
 
     //////////
@@ -73,7 +73,7 @@ public interface WorkflowController extends Remote {
      * @throws RemoteException             on communications failure.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public void abort(int xid) throws RemoteException, InvalidTransactionException;
+    void abort(int xid) throws RemoteException, InvalidTransactionException;
 
     /**
      * Add seats to a flight.  In general this will be used to create
@@ -90,7 +90,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Delete an entire flight.
@@ -103,7 +103,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean deleteFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean deleteFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Add rooms to a location.
@@ -116,7 +116,7 @@ public interface WorkflowController extends Remote {
      * @throws InvalidTransactionException if transaction id is invalid.
      * @see #addFlight
      */
-    public boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Delete rooms from a location.
@@ -130,7 +130,7 @@ public interface WorkflowController extends Remote {
      * @throws InvalidTransactionException if transaction id is invalid.
      * @see #deleteFlight
      */
-    public boolean deleteRooms(int xid, String location, int numRooms) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean deleteRooms(int xid, String location, int numRooms) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Add cars to a location.
@@ -143,7 +143,7 @@ public interface WorkflowController extends Remote {
      * @see #addRooms
      * @see #addFlight
      */
-    public boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Delete cars from a location.
@@ -156,7 +156,7 @@ public interface WorkflowController extends Remote {
      * @see #deleteRooms
      * @see #deleteFlight
      */
-    public boolean deleteCars(int xid, String location, int numCars) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean deleteCars(int xid, String location, int numCars) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Add a new customer to database.  Should return success if
@@ -169,7 +169,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean newCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean newCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
 
     //////////
@@ -186,7 +186,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean deleteCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean deleteCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the number of empty seats on a flight.
@@ -198,32 +198,32 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public int queryFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the price of a seat on this flight. Return -1 if flightNum==null or doesn't exist.
      */
-    public int queryFlightPrice(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryFlightPrice(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the number of rooms available at a location.
      */
-    public int queryRooms(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryRooms(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the price of rooms at this location.
      */
-    public int queryRoomsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryRoomsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the number of cars available at a location.
      */
-    public int queryCars(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryCars(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Return the price of rental cars at this location.
      */
-    public int queryCarsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryCarsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
 
     //////////
@@ -231,7 +231,7 @@ public interface WorkflowController extends Remote {
     //////////
 
     /* Return the total price of all reservations held for a customer. Return -1 if custName==null or doesn't exist.*/
-    public int queryCustomerBill(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    int queryCustomerBill(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Reserve a flight on behalf of this customer.
@@ -244,17 +244,17 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean reserveFlight(int xid, String custName, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean reserveFlight(int xid, String custName, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Reserve a car for this customer at the specified location.
      */
-    public boolean reserveCar(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean reserveCar(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * Reserve a room for this customer at the specified location.
      */
-    public boolean reserveRoom(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean reserveRoom(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
 
     //////////
@@ -275,7 +275,7 @@ public interface WorkflowController extends Remote {
      * @throws TransactionAbortedException if transaction was aborted.
      * @throws InvalidTransactionException if transaction id is invalid.
      */
-    public boolean reserveItinerary(int xid, String custName, List flightNumList, String location, boolean needCar, boolean needRoom) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
+    boolean reserveItinerary(int xid, String custName, List flightNumList, String location, boolean needCar, boolean needRoom) throws RemoteException, TransactionAbortedException, InvalidTransactionException;
 
     /**
      * If some component has died and was restarted, this function is
@@ -288,7 +288,7 @@ public interface WorkflowController extends Remote {
      *
      * @return true on success, false on failure. (some component not up yet...)
      */
-    public boolean reconnect() throws RemoteException;
+    boolean reconnect() throws RemoteException;
 
     /**
      * Kill the component immediately.  Used to simulate a system
@@ -299,7 +299,7 @@ public interface WorkflowController extends Remote {
      * @param who which component to kill; must be "TM", "RMFlights", "RMRooms", "RMCars", "RMCustomers", "WC", or "ALL" (which kills all 6 in that order).
      * @return true on success, false on failure.
      */
-    public boolean dieNow(String who) throws RemoteException;
+    boolean dieNow(String who) throws RemoteException;
 
     /**
      * Sets a flag so that the RM fails after the next enlist()
@@ -312,7 +312,7 @@ public interface WorkflowController extends Remote {
      * @param who which RM to kill; must be "RMFlights", "RMRooms", "RMCars", or "RMCustomers".
      * @return true on success, false on failure.
      */
-    public boolean dieRMAfterEnlist(String who) throws RemoteException;
+    boolean dieRMAfterEnlist(String who) throws RemoteException;
 
     /**
      * Sets a flag so that the RM fails when it next tries to prepare,
@@ -323,7 +323,7 @@ public interface WorkflowController extends Remote {
      * @param who which RM to kill; must be "RMFlights", "RMRooms", "RMCars", or "RMCustomers".
      * @return true on success, false on failure.
      */
-    public boolean dieRMBeforePrepare(String who) throws RemoteException;
+    boolean dieRMBeforePrepare(String who) throws RemoteException;
 
     /**
      * Sets a flag so that the RM fails when it next tries to prepare:
@@ -335,7 +335,7 @@ public interface WorkflowController extends Remote {
      * @param who which RM to kill; must be "RMFlights", "RMRooms", "RMCars", or "RMCustomers".
      * @return true on success, false on failure.
      */
-    public boolean dieRMAfterPrepare(String who) throws RemoteException;
+    boolean dieRMAfterPrepare(String who) throws RemoteException;
 
     /**
      * Sets a flag so that the TM fails after it has received
@@ -346,7 +346,7 @@ public interface WorkflowController extends Remote {
      *
      * @return true on success, false on failure.
      */
-    public boolean dieTMBeforeCommit() throws RemoteException;
+    boolean dieTMBeforeCommit() throws RemoteException;
 
     /**
      * Sets a flag so that the TM fails right after it logs
@@ -356,7 +356,7 @@ public interface WorkflowController extends Remote {
      *
      * @return true on success, false on failure.
      */
-    public boolean dieTMAfterCommit() throws RemoteException;
+    boolean dieTMAfterCommit() throws RemoteException;
 
     /**
      * Sets a flag so that the RM fails when it is told by the TM to
@@ -368,7 +368,7 @@ public interface WorkflowController extends Remote {
      * @param who which RM to kill; must be "RMFlights", "RMRooms", "RMCars", or "RMCustomers".
      * @return true on success, false on failure.
      */
-    public boolean dieRMBeforeCommit(String who) throws RemoteException;
+    boolean dieRMBeforeCommit(String who) throws RemoteException;
 
     /**
      * Sets a flag so that the RM fails when it is told by the TM to
@@ -380,5 +380,5 @@ public interface WorkflowController extends Remote {
      * @param who which RM to kill; must be "RMFlights", "RMRooms", "RMCars", or "RMCustomers".
      * @return true on success, false on failure.
      */
-    public boolean dieRMBeforeAbort(String who) throws RemoteException;
+    boolean dieRMBeforeAbort(String who) throws RemoteException;
 }

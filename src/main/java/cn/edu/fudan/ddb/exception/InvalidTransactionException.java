@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.transaction.exception;
+package cn.edu.fudan.ddb.exception;
 
 /**
  * The transaction identifier that was passed is not valid.

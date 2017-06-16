@@ -1,4 +1,4 @@
-package cn.edu.fudan.ddb.transaction.exception;
+package cn.edu.fudan.ddb.exception;
 
 /**
  * A problem occurred that caused the transaction to abort.  Perhaps

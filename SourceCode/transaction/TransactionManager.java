@@ -1,21 +1,27 @@
 package transaction;
 
-import java.rmi.*;
+import java.rmi.Remote;
+import java.rmi.RemoteException;
 
-/** 
+/**
  * Interface for the Transaction Manager of the Distributed Travel
  * Reservation System.
- * <p>
- * Unlike WorkflowController.java, you are supposed to make changes
- * to this file.
  */
 
 public interface TransactionManager extends Remote {
 
-    public boolean dieNow()
-	throws RemoteException;
+    public void enlist(int xid, ResourceManager rm) throws RemoteException;
 
+    public boolean prepare() throws RemoteException;
 
-    /** The RMI name a TransactionManager binds to. */
+    public boolean commit() throws RemoteException;
+
+    public boolean abort() throws RemoteException;
+
+    public boolean dieNow() throws RemoteException;
+
+    /**
+     * The RMI name a TransactionManager binds to.
+     */
     public static final String RMIName = "TM";
 }

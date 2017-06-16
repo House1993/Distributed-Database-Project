@@ -1,4 +1,5 @@
-package transaction;
+import cn.edu.fudan.ddb.transaction.ResourceManager;
+import cn.edu.fudan.ddb.transaction.TransactionManager;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;

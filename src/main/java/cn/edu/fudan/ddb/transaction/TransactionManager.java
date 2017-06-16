@@ -1,4 +1,4 @@
-package transaction;
+package cn.edu.fudan.ddb.transaction;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -20,8 +20,5 @@ public interface TransactionManager extends Remote {
 
     public boolean dieNow() throws RemoteException;
 
-    /**
-     * The RMI name a TransactionManager binds to.
-     */
     public static final String RMIName = "TM";
 }

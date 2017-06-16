@@ -1,4 +1,7 @@
-package lockmgr;
+package cn.edu.fudan.ddb.lockmgr;
+
+import cn.edu.fudan.ddb.lockmgr.exception.DeadlockException;
+import cn.edu.fudan.ddb.lockmgr.exception.RedundantLockRequestException;
 
 import java.util.BitSet;
 import java.util.Vector;

@@ -1,5 +1,6 @@
 package cn.edu.fudan.ddb.transaction;
 
+import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.resource.ResourceManager;
 
 import java.rmi.Remote;
@@ -17,26 +18,19 @@ public interface TransactionManager extends Remote {
      *
      * @param xid transaction id
      * @param rm  RM
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has been committed/aborted
      * @throws RemoteException
      */
-    public void enlist(int xid, ResourceManager rm) throws RemoteException;
+    public void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
 
     /**
-     * start a new transaction
+     * start a new transaction with a unique id
      *
      * @param xid transaction id
+     * @return true for a unique id, false for repeated id
      * @throws RemoteException
      */
-    public void start(int xid) throws RemoteException;
-
-    /**
-     * for transaction id = @xid, RM = @rm prepare to commit
-     *
-     * @param xid transaction id
-     * @param rm  RM
-     * @throws RemoteException
-     */
-    public void prepare(int xid, ResourceManager rm) throws RemoteException;
+    public boolean start(int xid) throws RemoteException;
 
     /**
      * attempt to commit the transaction id = @xid
@@ -45,7 +39,7 @@ public interface TransactionManager extends Remote {
      * otherwise, return true
      *
      * @param xid transaction id
-     * @return commit successfully or not
+     * @return true for commit successfully, false oppositely
      * @throws RemoteException
      */
     public boolean commit(int xid) throws RemoteException;
@@ -57,6 +51,15 @@ public interface TransactionManager extends Remote {
      * @throws RemoteException
      */
     public void abort(int xid) throws RemoteException;
+
+    /**
+     * check a transaction id = @xid whether it is committed
+     *
+     * @param xid
+     * @return true for committed transaction, false oppositely
+     * @throws RemoteException
+     */
+    public boolean iscommit(int xid) throws RemoteException;
 
     public boolean dieNow() throws RemoteException;
 

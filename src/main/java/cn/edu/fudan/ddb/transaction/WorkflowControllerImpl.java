@@ -68,6 +68,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // TRANSACTION INTERFACE
     public int start() throws RemoteException {
+        tm.start(xidCounter);
         return (xidCounter++);
     }
 

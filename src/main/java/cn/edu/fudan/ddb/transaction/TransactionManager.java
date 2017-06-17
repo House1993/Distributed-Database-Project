@@ -1,7 +1,7 @@
 package cn.edu.fudan.ddb.transaction;
 
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
-import cn.edu.fudan.ddb.resource.ResourceManager;
+import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -21,7 +21,7 @@ public interface TransactionManager extends Remote {
      * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
      * @throws RemoteException
      */
-    void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
+    void enlist(int xid, ResourceManagerImpl rm) throws RemoteException, InvalidTransactionException;
 
     /**
      * start a new transaction with a unique id
@@ -51,7 +51,7 @@ public interface TransactionManager extends Remote {
      * @param xid transaction id
      * @throws RemoteException
      */
-    void abort(int xid) throws RemoteException;
+    void abort(int xid) throws RemoteException, InvalidTransactionException;
 
     /**
      * check a transaction id = @xid whether it has committed

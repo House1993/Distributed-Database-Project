@@ -1,7 +1,7 @@
 package cn.edu.fudan.ddb.transaction;
 
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
-import cn.edu.fudan.ddb.resource.ResourceManager;
+import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.io.*;
 import java.rmi.Naming;
@@ -22,7 +22,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     /**
      * the RMs that related to each transaction
      */
-    private HashMap<Integer, HashMap<String, ResourceManager>> rms;
+    private HashMap<Integer, HashMap<String, ResourceManagerImpl>> rms;
 
     /**
      * the committed transaction ids
@@ -53,13 +53,13 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     public TransactionManagerImpl() throws RemoteException {
         super();
         try {
-            rms.clear();
+            rms = new HashMap<>();
             File f = new File(committedPath);
             if (f.exists()) {
                 ObjectInputStream ois = new ObjectInputStream(new FileInputStream(committedPath));
                 committed = (HashSet<Integer>) ois.readObject();
             } else {
-                committed.clear();
+                committed = new HashSet<>();
             }
         } catch (Exception e) {
             System.out.println("Fail to initialize TM");
@@ -67,7 +67,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         }
     }
 
-    public void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException {
+    public void enlist(int xid, ResourceManagerImpl rm) throws RemoteException, InvalidTransactionException {
         if (!rms.containsKey(xid)) {
             if (committed.contains(xid)) {
                 throw new InvalidTransactionException(xid, "the transaction has already committed");
@@ -76,8 +76,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             }
         }
 
-        rms.get(xid).put("", rm);
-//        rms.get(xid).put(rm.getName(), rm); TODO
+        rms.get(xid).put(rm.getRMIName(), rm);
     }
 
     public boolean start(int xid) throws RemoteException {
@@ -99,11 +98,11 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         }
         for (int trytime = 1; trytime <= 10; ++trytime) {
             boolean cannot = false;
-            for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
-//                if (!f.getValue().prepare(xid)) { TODO if rm die ?
-//                    cannot = true;
-//                    break;
-//                }
+            for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
+                if (!f.getValue().prepare(xid)) {
+                    cannot = true;
+                    break;
+                }
             }
             if (cannot) {
                 try {
@@ -120,8 +119,8 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                     System.out.println("Fail to write committed");
                     System.exit(1);
                 }
-                for (Map.Entry<String, ResourceManager> i : rms.get(xid).entrySet()) {
-//                    i.getValue().commit(xid); TODO
+                for (Map.Entry<String, ResourceManagerImpl> i : rms.get(xid).entrySet()) {
+                    i.getValue().commit(xid);
                 }
                 rms.remove(xid);
                 return true;
@@ -131,9 +130,9 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         return false;
     }
 
-    public void abort(int xid) throws RemoteException {
-        for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
-//            f.getValue().abort(xid);
+    public void abort(int xid) throws RemoteException, InvalidTransactionException {
+        for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
+            f.getValue().abort(xid);
         }
         rms.remove(xid);
     }

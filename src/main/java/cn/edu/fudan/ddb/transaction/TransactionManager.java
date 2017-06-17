@@ -60,9 +60,11 @@ public interface TransactionManager extends Remote {
      * @return true for committed transaction, false oppositely
      * @throws RemoteException
      */
-    public boolean iscommit(int xid) throws RemoteException;
+    boolean iscommit(int xid) throws RemoteException;
 
-    public boolean dieNow() throws RemoteException;
+    boolean dieNow() throws RemoteException;
 
     String RMIName = "TM";
+
+    void testConnection();
 }

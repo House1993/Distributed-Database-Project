@@ -148,4 +148,9 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         // but we still need it to please the compiler.
         return true;
     }
+
+    @Override
+    public void testConnection() {
+
+    }
 }

@@ -186,10 +186,10 @@ public class LockManager
                 DataObj dataObj = new DataObj(trxnObj.getXId(), trxnObj.getDataName(), trxnObj.getLockType());
                 this.lockTable.remove(dataObj);
 
-                // check if there are any waiting transactions.
+                // check if there are any waiting transactionsInProcessing.
                 synchronized (this.waitTable)
                 {
-                    // get all the transactions waiting on this dataObj
+                    // get all the transactionsInProcessing waiting on this dataObj
                     waitVector = this.waitTable.elements(dataObj);
                     int waitSize = waitVector.size();
                     for (int j = 0; j < waitSize; j++)
@@ -199,7 +199,7 @@ public class LockManager
                         {
                             if (j == 0)
                             {
-                                // get all other transactions which have locks
+                                // get all other transactionsInProcessing which have locks
                                 // on the
                                 // data item just unlocked.
                                 Vector vect1 = this.lockTable.elements(dataObj);

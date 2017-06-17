@@ -23,8 +23,6 @@ public interface ResourceManager<T extends ResourceItem> extends Remote {
     String RMI_NAME_RM_HOTEL = "rm.hotels";
     String RMI_NAME_RM_RESERVATIONS = "rm.reservations";
 
-    boolean reconnect() throws RemoteException;
-
     boolean dieNow() throws RemoteException;
 
     List<T> query(int xid, String tableName) throws DeadlockException, InvalidTransactionException, RemoteException;
@@ -42,4 +40,6 @@ public interface ResourceManager<T extends ResourceItem> extends Remote {
     void commit(int xid) throws InvalidTransactionException, RemoteException;
 
     void abort(int xid) throws InvalidTransactionException, RemoteException;
+
+    void testConnection();
 }

@@ -28,7 +28,7 @@ import lockmgr.LockManager;
 
 public class ResourceManagerImpl extends java.rmi.server.UnicastRemoteObject implements ResourceManager
 {
-    protected final static String TRANSACTION_LOG_FILENAME = "transactions.log";
+    protected final static String TRANSACTION_LOG_FILENAME = "txInProcessing.log";
 
     public Set getTransactions()
     {
@@ -102,7 +102,7 @@ public class ResourceManagerImpl extends java.rmi.server.UnicastRemoteObject imp
                     if (tm == null)
                     {
                         reconnect();
-                        System.out.println("reconnect tm!");
+                        System.out.println("reconnect transactionManager!");
 
                     }
                     try
@@ -187,7 +187,7 @@ public class ResourceManagerImpl extends java.rmi.server.UnicastRemoteObject imp
             e1.printStackTrace();
             return false;
         }
-        String rmiPort = prop.getProperty("tm.port");
+        String rmiPort = prop.getProperty("transactionManager.port");
         if (rmiPort == null)
         {
             rmiPort = "";
@@ -371,7 +371,7 @@ public class ResourceManagerImpl extends java.rmi.server.UnicastRemoteObject imp
 
     protected HashSet loadTransactionLogs()
     {
-        File xidLog = new File("data/transactions.log");
+        File xidLog = new File("data/txInProcessing.log");
         ObjectInputStream oin = null;
         try
         {
@@ -397,7 +397,7 @@ public class ResourceManagerImpl extends java.rmi.server.UnicastRemoteObject imp
 
     protected boolean storeTransactionLogs(HashSet xids)
     {
-        File xidLog = new File("data/transactions.log");
+        File xidLog = new File("data/txInProcessing.log");
         xidLog.getParentFile().mkdirs();
         xidLog.getParentFile().mkdirs();
         ObjectOutputStream oout = null;

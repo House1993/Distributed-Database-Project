@@ -13,7 +13,7 @@ import java.util.List;
  * <p>
  * Failure reporting is done using two pieces, exceptions and boolean
  * return values.  Exceptions are used for systemy things - like
- * transactions that were forced to abort, or don't exist.  Return
+ * txInProcessing that were forced to abort, or don't exist.  Return
  * values are used for operations that would affect the consistency of
  * the database, like the deletion of more cars than there are.
  * <p>
@@ -45,7 +45,7 @@ public interface WorkflowController extends Remote {
     /**
      * Start a new transaction, and return its transaction id.
      *
-     * @return A unique transaction ID > 0.  Return <=0 if server is not accepting new transactions.
+     * @return A unique transaction ID > 0.  Return <=0 if server is not accepting new txInProcessing.
      * @throws RemoteException on communications failure.
      */
     int start() throws RemoteException;

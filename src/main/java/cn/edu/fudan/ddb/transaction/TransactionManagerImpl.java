@@ -76,14 +76,18 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             }
         }
 
-        rms.get(xid).put(rm.getRMIName(), rm);
+        synchronized (rms) {
+            rms.get(xid).put(rm.getRMIName(), rm);
+        }
     }
 
     public boolean start(int xid) throws RemoteException {
         if (committed.contains(xid) || rms.containsKey(xid)) {
             return false;
         }
-        rms.put(xid, new HashMap<>());
+        synchronized (rms) {
+            rms.put(xid, new HashMap<>());
+        }
         return true;
     }
 
@@ -111,18 +115,22 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                     e.printStackTrace();
                 }
             } else {
-                committed.add(xid);
-                try {
-                    ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(committedPath));
-                    oos.writeObject(committed);
-                } catch (IOException e) {
-                    System.out.println("Fail to write committed");
-                    System.exit(1);
+                synchronized (committed) {
+                    committed.add(xid);
+                    try {
+                        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(committedPath));
+                        oos.writeObject(committed);
+                    } catch (IOException e) {
+                        System.out.println("Fail to write committed");
+                        System.exit(1);
+                    }
                 }
                 for (Map.Entry<String, ResourceManagerImpl> i : rms.get(xid).entrySet()) {
                     i.getValue().commit(xid);
                 }
-                rms.remove(xid);
+                synchronized (rms) {
+                    rms.remove(xid);
+                }
                 return true;
             }
         }
@@ -134,7 +142,9 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
             f.getValue().abort(xid);
         }
-        rms.remove(xid);
+        synchronized (rms) {
+            rms.remove(xid);
+        }
     }
 
     public boolean iscommit(int xid) throws RemoteException {

@@ -1,5 +1,6 @@
 package cn.edu.fudan.ddb.transaction;
 
+import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.resource.ResourceManager;
 
 import java.rmi.Remote;
@@ -17,38 +18,32 @@ public interface TransactionManager extends Remote {
      *
      * @param xid transaction id
      * @param rm  RM
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
      * @throws RemoteException
      */
-    void enlist(int xid, ResourceManager rm) throws RemoteException;
+    void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
 
     /**
-     * start a new transaction
+     * start a new transaction with a unique id
      *
      * @param xid transaction id
+     * @return true for a unique id, false for repeated id
      * @throws RemoteException
      */
-    void start(int xid) throws RemoteException;
-
-    /**
-     * for transaction id = @xid, RM = @rm prepare to commit
-     *
-     * @param xid transaction id
-     * @param rm  RM
-     * @throws RemoteException
-     */
-    void prepare(int xid, ResourceManager rm) throws RemoteException;
+    boolean start(int xid) throws RemoteException;
 
     /**
      * attempt to commit the transaction id = @xid
-     * attempt at most 10 times, that means a transaction must be committed in 10s or it will be aborted
-     * return false when the transaction can not be committed in 10s, abort it automatically
+     * attempt at most 10 times, that means a transaction must commit successfully in 10s or it will abort
+     * return false when the transaction can not commit in 10s, abort it automatically
      * otherwise, return true
      *
      * @param xid transaction id
-     * @return commit successfully or not
+     * @return true for commit successfully, false oppositely
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
      * @throws RemoteException
      */
-    boolean commit(int xid) throws RemoteException;
+    boolean commit(int xid) throws RemoteException, InvalidTransactionException;
 
     /**
      * abort transaction id = @xid
@@ -58,7 +53,16 @@ public interface TransactionManager extends Remote {
      */
     void abort(int xid) throws RemoteException;
 
-    boolean dieNow() throws RemoteException;
+    /**
+     * check a transaction id = @xid whether it has committed
+     *
+     * @param xid
+     * @return true for committed transaction, false oppositely
+     * @throws RemoteException
+     */
+    public boolean iscommit(int xid) throws RemoteException;
+
+    public boolean dieNow() throws RemoteException;
 
     String RMIName = "TM";
 }

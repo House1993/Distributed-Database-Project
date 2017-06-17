@@ -3,6 +3,7 @@ package cn.edu.fudan.ddb.resource;
 import cn.edu.fudan.ddb.entity.ResourceItem;
 import cn.edu.fudan.ddb.exception.DeadlockException;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.exception.TransactionManagerInaccessibleException;
 import cn.edu.fudan.ddb.lockmgr.LockManager;
 import cn.edu.fudan.ddb.transaction.TransactionManager;
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     protected Set<Integer> txInProcessing = ConcurrentHashMap.newKeySet();
 
     protected LockManager lockManager = new LockManager();
-    protected Hashtable<Integer, Hashtable<String, RMTable>> tables = new Hashtable<>();
+    protected Hashtable<Integer, Hashtable<String, RMTable<T>>> tables = new Hashtable<>();
 
     public ResourceManagerImpl() throws RemoteException {
         // recover unfinished transactions
@@ -56,7 +57,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     }
 
     private void recover() {
-        HashSet<Integer> lastTransactions = loadTransactionLogs();
+        Set<Integer> lastTransactions = loadTransactionLogs();
         if (lastTransactions != null) {
             txInProcessing = lastTransactions;
         }
@@ -87,7 +88,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
                     File[] txTableFiles = dataFile.listFiles();
                     if (txTableFiles != null) {
                         for (File txTableFile : txTableFiles) {
-                            RMTable dataTable = getTable(txId, txTableFile.getName());
+                            RMTable<T> dataTable = getTable(txId, txTableFile.getName());
                             try {
                                 dataTable.relockAll();
                             } catch (DeadlockException e) {
@@ -101,7 +102,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     }
 
     @SuppressWarnings("unchecked")
-    private HashSet<Integer> loadTransactionLogs() {
+    private Set<Integer> loadTransactionLogs() {
         File transactionLog = new File(DATA_DIR + File.separator + TRANSACTION_LOG_FILENAME);
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(transactionLog))) {
             return (HashSet<Integer>) ois.readObject();
@@ -111,7 +112,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
-    private boolean saveTransactionLogs(HashSet<Integer> transactions) {
+    private boolean saveTransactionLogs(Set<Integer> transactions) {
         File transactionLog = new File(DATA_DIR + File.separator + TRANSACTION_LOG_FILENAME);
         try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(transactionLog))) {
             oos.writeObject(transactions);
@@ -123,16 +124,17 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
-    private RMTable loadTable(File file) {
+    @SuppressWarnings("unchecked")
+    private RMTable<T> loadTable(File file) {
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
-            return (RMTable) ois.readObject();
+            return (RMTable<T>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             logger.error("Failed to load transaction log!", e);
             return null;
         }
     }
 
-    private boolean saveTable(RMTable table, File file) {
+    private boolean saveTable(RMTable<T> table, File file) {
         if (!file.getParentFile().mkdirs()) {
             logger.error("Failed to create directory {}!", file.getParentFile());
             return false;
@@ -147,23 +149,23 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
-    private RMTable getTable(String tableName) {
+    private RMTable<T> getTable(String tableName) {
         return getTable(-1, tableName);
     }
 
-    private RMTable getTable(int txId, String tableName) {
-        Hashtable<String, RMTable> txTables = tables.computeIfAbsent(txId, k -> new Hashtable<>());
+    private RMTable<T> getTable(int txId, String tableName) {
+        Hashtable<String, RMTable<T>> txTables = tables.computeIfAbsent(txId, k -> new Hashtable<>());
 
         synchronized (txTables) {
-            RMTable txTable = txTables.get(tableName);
+            RMTable<T> txTable = txTables.get(tableName);
             if (txTable == null) {
                 File txTableFile = new File(DATA_DIR + File.separator + (txId == -1 ? "" : (txId + File.separator)) + tableName);
                 txTable = loadTable(txTableFile);
                 if (txTable == null) {
                     if (txId == -1) {
-                        txTable = new RMTable(tableName, null, -1, lockManager);
+                        txTable = new RMTable<>(tableName, null, -1, lockManager);
                     } else {
-                        txTable = new RMTable(tableName, getTable(tableName), txId, lockManager);
+                        txTable = new RMTable<>(tableName, getTable(tableName), txId, lockManager);
                     }
                 } else if (txId != -1) {
                     txTable.setLockManager(lockManager);
@@ -237,6 +239,24 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }).start();
     }
 
+    private TransactionManager getTransactionManager() throws TransactionManagerInaccessibleException {
+        if (transactionManager != null) {
+            try {
+                if (!transactionManager.testConnection()) {
+                    transactionManager = null;
+                    reconnectTM();
+                }
+            } catch (RemoteException e) {
+                transactionManager = null;
+            }
+        }
+        if (transactionManager == null) {
+            throw new TransactionManagerInaccessibleException();
+        } else {
+            return transactionManager;
+        }
+    }
+
     public String getRMIName() {
         return myRMIName;
     }
@@ -249,26 +269,208 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
 
     @Override
     public List<T> query(int txId, String tableName) throws DeadlockException, InvalidTransactionException, RemoteException {
-        return null;
+        if (txId < 0) {
+            throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
+        }
+
+        // record the transaction id
+        synchronized (txInProcessing) {
+            txInProcessing.add(txId);
+            saveTransactionLogs(txInProcessing);
+        }
+
+        // notify TM this RM is participate in this transaction
+        try {
+            getTransactionManager().enlist(txId, this);
+        } catch (TransactionManagerInaccessibleException e) {
+            throw new RemoteException(e.getMessage(), e.getCause());
+        }
+
+        if (dieTime.equals("AfterEnlist")) {
+            dieNow();
+        }
+
+        RMTable<T> txTable = getTable(txId, tableName);
+        synchronized (txTable) {
+            // read resource items
+            List<T> result = new ArrayList<>();
+            for (Object key : txTable.keySet()) {
+                T item = txTable.get(key);
+                if (item != null && !item.isDeleted()) {
+                    txTable.lock(key, 0);
+                    result.add(item);
+                }
+            }
+
+            // save transaction shadow table
+            File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
+            if (!result.isEmpty() && !saveTable(txTable, txTableFile)) {
+                throw new RemoteException("System Error: Can't write table to disk!");
+            }
+            return result;
+        }
     }
 
     @Override
     public T query(int txId, String tableName, Object key) throws DeadlockException, InvalidTransactionException, RemoteException {
-        return null;
+        if (txId < 0) {
+            throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
+        }
+
+        // record the transaction id
+        synchronized (txInProcessing) {
+            txInProcessing.add(txId);
+            saveTransactionLogs(txInProcessing);
+        }
+
+        // notify TM this RM is participate in this transaction
+        try {
+            getTransactionManager().enlist(txId, this);
+        } catch (TransactionManagerInaccessibleException e) {
+            throw new RemoteException(e.getMessage(), e.getCause());
+        }
+
+        if (dieTime.equals("AfterEnlist")) {
+            dieNow();
+        }
+
+        // read resource items
+        RMTable<T> txTable = getTable(txId, tableName);
+        T item = txTable.get(key);
+        if (item != null && !item.isDeleted()) {
+            txTable.lock(key, 0);
+
+            // save transaction shadow table
+            File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
+            if (!saveTable(txTable, txTableFile)) {
+                throw new RemoteException("System Error: Can't write table to disk!");
+            }
+        }
+        return item;
     }
 
     @Override
     public boolean update(int txId, String tableName, Object key, T newItem) throws DeadlockException, InvalidTransactionException, RemoteException {
+        if (txId < 0) {
+            throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
+        }
+
+        // record the transaction id
+        synchronized (txInProcessing) {
+            txInProcessing.add(txId);
+            saveTransactionLogs(txInProcessing);
+        }
+
+        // notify TM this RM is participate in this transaction
+        try {
+            getTransactionManager().enlist(txId, this);
+        } catch (TransactionManagerInaccessibleException e) {
+            throw new RemoteException(e.getMessage(), e.getCause());
+        }
+
+        if (dieTime.equals("AfterEnlist")) {
+            dieNow();
+        }
+
+        // read resource items
+        RMTable<T> txTable = getTable(txId, tableName);
+        T item = txTable.get(key);
+        if (item != null && !item.isDeleted()) {
+            txTable.lock(key, 1);
+            txTable.put(newItem);
+
+            // save transaction shadow table
+            File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
+            if (!saveTable(txTable, txTableFile)) {
+                throw new RemoteException("System Error: Can't write table to disk!");
+            }
+            return true;
+        }
         return false;
     }
 
     @Override
     public boolean insert(int txId, String tableName, T newItem) throws DeadlockException, InvalidTransactionException, RemoteException {
-        return false;
+        if (txId < 0) {
+            throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
+        }
+
+        // record the transaction id
+        synchronized (txInProcessing) {
+            txInProcessing.add(txId);
+            saveTransactionLogs(txInProcessing);
+        }
+
+        // notify TM this RM is participate in this transaction
+        try {
+            getTransactionManager().enlist(txId, this);
+        } catch (TransactionManagerInaccessibleException e) {
+            throw new RemoteException(e.getMessage(), e.getCause());
+        }
+
+        if (dieTime.equals("AfterEnlist")) {
+            dieNow();
+        }
+
+        // read resource items
+        RMTable<T> txTable = getTable(txId, tableName);
+        T item = txTable.get(newItem.getKey());
+        if (item != null && !item.isDeleted()) {  // already exist
+            return false;
+        }
+        txTable.lock(newItem.getKey(), 1);
+        txTable.put(newItem);
+
+        // save transaction shadow table
+        File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
+        if (!saveTable(txTable, txTableFile)) {
+            throw new RemoteException("System Error: Can't write table to disk!");
+        }
+        return true;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public boolean delete(int txId, String tableName, Object key) throws DeadlockException, InvalidTransactionException, RemoteException {
+        if (txId < 0) {
+            throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
+        }
+
+        // record the transaction id
+        synchronized (txInProcessing) {
+            txInProcessing.add(txId);
+            saveTransactionLogs(txInProcessing);
+        }
+
+        // notify TM this RM is participate in this transaction
+        try {
+            getTransactionManager().enlist(txId, this);
+        } catch (TransactionManagerInaccessibleException e) {
+            throw new RemoteException(e.getMessage(), e.getCause());
+        }
+
+        if (dieTime.equals("AfterEnlist")) {
+            dieNow();
+        }
+
+        // read resource items
+        RMTable<T> txTable = getTable(txId, tableName);
+        T item = txTable.get(key);
+        if (item != null && !item.isDeleted()) {
+            txTable.lock(key, 1);
+            try {
+                item = (T) item.clone();
+            } catch (CloneNotSupportedException ignored) {}
+            item.setDeleted(true);
+            txTable.put(item);
+
+            // save transaction shadow table
+            File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
+            if (!saveTable(txTable, txTableFile)) {
+                throw new RemoteException("System Error: Can't write table to disk!");
+            }
+            return true;
+        }
         return false;
     }
 
@@ -297,17 +499,17 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
             throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
         }
 
-        Hashtable<String, RMTable> txTables = tables.get(txId);
+        Hashtable<String, RMTable<T>> txTables = tables.get(txId);
         if (txTables != null) {
             synchronized (txTables) {
-                for (Map.Entry<String, RMTable> entry : txTables.entrySet()) {
+                for (Map.Entry<String, RMTable<T>> entry : txTables.entrySet()) {
                     String tableName = entry.getKey();
-                    RMTable txTable = entry.getValue();
-                    RMTable table = getTable(tableName);
+                    RMTable<T> txTable = entry.getValue();
+                    RMTable<T> table = getTable(tableName);
 
                     // merge changes in transaction shadow table to the original table
                     for (Object key : txTable.keySet()) {
-                        ResourceItem item = txTable.get(key);
+                        T item = txTable.get(key);
                         if (item.isDeleted()) {
                             table.remove(item);
                         } else {
@@ -356,10 +558,10 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
             throw new InvalidTransactionException(txId, "Transaction ID must be positive.");
         }
 
-        Hashtable<String, RMTable> txTables = tables.get(txId);
+        Hashtable<String, RMTable<T>> txTables = tables.get(txId);
         if (txTables != null) {
             synchronized (txTables) {
-                for (Map.Entry<String, RMTable> entry : txTables.entrySet()) {
+                for (Map.Entry<String, RMTable<T>> entry : txTables.entrySet()) {
                     String tableName = entry.getKey();
 
                     // cleanup the file of transaction shadow table
@@ -389,7 +591,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     }
 
     @Override
-    public void testConnection() {
-
+    public boolean testConnection() throws RemoteException {
+        return true;
     }
 }

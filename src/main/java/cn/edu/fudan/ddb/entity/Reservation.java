@@ -67,7 +67,7 @@ public class Reservation extends ResourceItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public Object clone() throws CloneNotSupportedException {
         Reservation reservation = new Reservation(custName, resvType, resvKey);
         reservation.setDeleted(this.isDeleted());
         return reservation;

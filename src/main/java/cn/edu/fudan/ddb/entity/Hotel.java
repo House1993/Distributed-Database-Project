@@ -81,7 +81,7 @@ public class Hotel extends ResourceItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public Object clone() throws CloneNotSupportedException {
         Hotel hotel = new Hotel(location, price, numRooms, numAvail);
         hotel.setDeleted(this.isDeleted());
         return hotel;

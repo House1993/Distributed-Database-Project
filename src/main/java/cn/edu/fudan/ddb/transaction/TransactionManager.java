@@ -18,7 +18,7 @@ public interface TransactionManager extends Remote {
      *
      * @param xid transaction id
      * @param rm  RM
-     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has been committed/aborted
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
      * @throws RemoteException
      */
     void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException;
@@ -30,19 +30,20 @@ public interface TransactionManager extends Remote {
      * @return true for a unique id, false for repeated id
      * @throws RemoteException
      */
-    void start(int xid) throws RemoteException;
+    boolean start(int xid) throws RemoteException;
 
     /**
      * attempt to commit the transaction id = @xid
-     * attempt at most 10 times, that means a transaction must be committed in 10s or it will be aborted
-     * return false when the transaction can not be committed in 10s, abort it automatically
+     * attempt at most 10 times, that means a transaction must commit successfully in 10s or it will abort
+     * return false when the transaction can not commit in 10s, abort it automatically
      * otherwise, return true
      *
      * @param xid transaction id
      * @return true for commit successfully, false oppositely
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
      * @throws RemoteException
      */
-    boolean commit(int xid) throws RemoteException;
+    boolean commit(int xid) throws RemoteException, InvalidTransactionException;
 
     /**
      * abort transaction id = @xid
@@ -53,7 +54,7 @@ public interface TransactionManager extends Remote {
     void abort(int xid) throws RemoteException;
 
     /**
-     * check a transaction id = @xid whether it is committed
+     * check a transaction id = @xid whether it has committed
      *
      * @param xid
      * @return true for committed transaction, false oppositely

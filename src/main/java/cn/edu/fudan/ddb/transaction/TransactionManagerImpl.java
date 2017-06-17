@@ -149,7 +149,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     @Override
-    public void testConnection() {
-
+    public boolean testConnection() throws RemoteException {
+        return true;
     }
 }

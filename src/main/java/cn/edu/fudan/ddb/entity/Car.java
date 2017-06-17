@@ -81,7 +81,7 @@ public class Car extends ResourceItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public Object clone() throws CloneNotSupportedException {
         Car car = new Car(location, price, numCars, numAvail);
         car.setDeleted(this.isDeleted());
         return car;

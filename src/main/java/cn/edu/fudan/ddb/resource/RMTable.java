@@ -9,11 +9,11 @@ import java.util.Hashtable;
 import java.util.Map;
 import java.util.Set;
 
-public class RMTable implements Serializable {
+public class RMTable<T extends ResourceItem> implements Serializable {
 
-    private Hashtable<Object, ResourceItem> table = new Hashtable<>();
+    private Hashtable<Object, T> table = new Hashtable<>();
 
-    private transient RMTable parent;
+    private transient RMTable<T> parent;
 
     private Hashtable<Object, Integer> locks = new Hashtable<>();
 
@@ -23,7 +23,7 @@ public class RMTable implements Serializable {
 
     protected int xid;
 
-    public RMTable(String tableName, RMTable parent, int xid, LockManager lm) {
+    public RMTable(String tableName, RMTable<T> parent, int xid, LockManager lm) {
         this.xid = xid;
         this.tableName = tableName;
         this.parent = parent;
@@ -57,24 +57,24 @@ public class RMTable implements Serializable {
         locks.put(key, lockType);
     }
 
-    public ResourceItem get(Object key) {
-        ResourceItem item = table.get(key);
+    public T get(Object key) {
+        T item = table.get(key);
         if (item == null && parent != null) {
             item = parent.get(key);
         }
         return item;
     }
 
-    public void put(ResourceItem item) {
+    public void put(T item) {
         table.put(item.getKey(), item);
     }
 
-    public void remove(ResourceItem item) {
+    public void remove(T item) {
         table.remove(item.getKey());
     }
 
     public Set<Object> keySet() {
-        Hashtable<Object, ResourceItem> t = new Hashtable<>();
+        Hashtable<Object, T> t = new Hashtable<>();
         if (parent != null) {
             t.putAll(parent.table);
         }

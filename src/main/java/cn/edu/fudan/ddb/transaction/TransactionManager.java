@@ -64,7 +64,7 @@ public interface TransactionManager extends Remote {
 
     boolean dieNow() throws RemoteException;
 
-    String RMIName = "TM";
+    boolean testConnection() throws RemoteException;
 
-    void testConnection();
+    String RMIName = "TM";
 }

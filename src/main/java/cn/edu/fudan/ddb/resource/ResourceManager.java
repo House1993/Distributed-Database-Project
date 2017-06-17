@@ -41,5 +41,5 @@ public interface ResourceManager<T extends ResourceItem> extends Remote {
 
     void abort(int xid) throws InvalidTransactionException, RemoteException;
 
-    void testConnection();
+    boolean testConnection() throws RemoteException;
 }

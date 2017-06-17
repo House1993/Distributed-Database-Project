@@ -81,7 +81,7 @@ public class Flight extends ResourceItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public Object clone() throws CloneNotSupportedException {
         Flight flight = new Flight(flightNum, price, numSeats, numAvail);
         flight.setDeleted(this.isDeleted());
         return flight;

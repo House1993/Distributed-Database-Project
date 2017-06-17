@@ -24,5 +24,5 @@ public abstract class ResourceItem implements Cloneable, Serializable {
 
     public abstract Object getKey();
 
-    protected abstract Object clone() throws CloneNotSupportedException;
+    public abstract Object clone() throws CloneNotSupportedException;
 }

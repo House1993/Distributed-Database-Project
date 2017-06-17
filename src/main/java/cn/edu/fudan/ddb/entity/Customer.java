@@ -48,7 +48,7 @@ public class Customer extends ResourceItem {
     }
 
     @Override
-    protected Object clone() throws CloneNotSupportedException {
+    public Object clone() throws CloneNotSupportedException {
         Customer customer = new Customer(custName);
         customer.setDeleted(this.isDeleted());
         return customer;

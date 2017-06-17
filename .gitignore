@@ -1,7 +1,7 @@
 #Idea
-.idea
+.idea/
 *.iml
-out
-
+out/
+target/
 #ppt
 *.ppt

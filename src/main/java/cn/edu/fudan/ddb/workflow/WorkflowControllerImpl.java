@@ -1,9 +1,10 @@
 package cn.edu.fudan.ddb.workflow;
 
-import cn.edu.fudan.ddb.resource.ResourceManager;
-import cn.edu.fudan.ddb.transaction.TransactionManager;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
+import cn.edu.fudan.ddb.resource.FlightResourceManager;
+import cn.edu.fudan.ddb.resource.ResourceManager;
+import cn.edu.fudan.ddb.transaction.TransactionManager;
 
 import java.rmi.Naming;
 import java.rmi.RMISecurityManager;
@@ -17,7 +18,6 @@ import java.util.List;
  * implementation, the WC should forward calls to either RM or TM,
  * instead of doing the things itself.
  */
-
 public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject implements WorkflowController {
 
     protected int flightcounter, flightprice, carscounter, carsprice, roomscounter, roomsprice;
@@ -27,6 +27,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     protected ResourceManager rmRooms = null;
     protected ResourceManager rmCars = null;
     protected ResourceManager rmCustomers = null;
+    protected ResourceManager rmReservations = null;
     protected TransactionManager tm = null;
 
     public WorkflowControllerImpl() throws RemoteException {
@@ -190,14 +191,16 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         }
 
         try {
-            rmFlights = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMINameFlights);
+            rmFlights = (ResourceManager) Naming.lookup(rmiPort + FlightResourceManager.RMI_NAME_RM_FLIGHTS);
             System.out.println("WC bound to RMFlights");
-            rmRooms = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMINameRooms);
+            rmRooms = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_HOTEL);
             System.out.println("WC bound to RMRooms");
-            rmCars = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMINameCars);
+            rmCars = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_CARS);
             System.out.println("WC bound to RMCars");
-            rmCustomers = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMINameCustomers);
+            rmCustomers = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_CUSTOMERS);
             System.out.println("WC bound to RMCustomers");
+            rmReservations = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_RESERVATIONS);
+            System.out.println("WC bound to RMReservations");
             tm = (TransactionManager) Naming.lookup(rmiPort + TransactionManager.RMIName);
             System.out.println("WC bound to TM");
         } catch (Exception e) {
@@ -224,27 +227,33 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             } catch (RemoteException e) {
             }
         }
-        if (who.equals(ResourceManager.RMINameFlights) || who.equals("ALL")) {
+        if (who.equals(ResourceManager.RMI_NAME_RM_FLIGHTS) || who.equals("ALL")) {
             try {
                 rmFlights.dieNow();
             } catch (RemoteException e) {
             }
         }
-        if (who.equals(ResourceManager.RMINameRooms) || who.equals("ALL")) {
+        if (who.equals(ResourceManager.RMI_NAME_RM_HOTEL) || who.equals("ALL")) {
             try {
                 rmRooms.dieNow();
             } catch (RemoteException e) {
             }
         }
-        if (who.equals(ResourceManager.RMINameCars) || who.equals("ALL")) {
+        if (who.equals(ResourceManager.RMI_NAME_RM_CARS) || who.equals("ALL")) {
             try {
                 rmCars.dieNow();
             } catch (RemoteException e) {
             }
         }
-        if (who.equals(ResourceManager.RMINameCustomers) || who.equals("ALL")) {
+        if (who.equals(ResourceManager.RMI_NAME_RM_CUSTOMERS) || who.equals("ALL")) {
             try {
                 rmCustomers.dieNow();
+            } catch (RemoteException e) {
+            }
+        }
+        if (who.equals(ResourceManager.RMI_NAME_RM_RESERVATIONS) || who.equals("ALL")) {
+            try {
+                rmReservations.dieNow();
             } catch (RemoteException e) {
             }
         }

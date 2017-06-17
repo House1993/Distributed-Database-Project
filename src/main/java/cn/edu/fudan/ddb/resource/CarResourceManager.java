@@ -14,10 +14,12 @@ public class CarResourceManager extends ResourceManagerImpl<Car> {
 
     private CarResourceManager() throws RemoteException {
         super();
-        myRMIName = "RMCars";
+        myRMIName = ResourceManager.RMI_NAME_RM_CARS;
     }
 
     public static void main(String args[]) {
+        myRMIName = ResourceManager.RMI_NAME_RM_CARS;
+
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("conf/ddb.conf"));
@@ -26,7 +28,7 @@ public class CarResourceManager extends ResourceManagerImpl<Car> {
             return;
         }
 
-        String rmiPort = prop.getProperty("rm." + myRMIName + ".port");
+        String rmiPort = prop.getProperty(myRMIName + ".port");
         try {
             _rmiRegistry = LocateRegistry.createRegistry(Integer.parseInt(rmiPort));
         } catch (RemoteException e2) {

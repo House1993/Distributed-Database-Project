@@ -14,10 +14,12 @@ public class ReservationResourceManager extends ResourceManagerImpl<Reservation>
 
     private ReservationResourceManager() throws RemoteException {
         super();
-        myRMIName = "RMReservations";
+        myRMIName = ResourceManager.RMI_NAME_RM_RESERVATIONS;
     }
 
     public static void main(String args[]) {
+        myRMIName = ResourceManager.RMI_NAME_RM_RESERVATIONS;
+
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("conf/ddb.conf"));
@@ -26,7 +28,7 @@ public class ReservationResourceManager extends ResourceManagerImpl<Reservation>
             return;
         }
 
-        String rmiPort = prop.getProperty("rm." + myRMIName + ".port");
+        String rmiPort = prop.getProperty(myRMIName + ".port");
         try {
             _rmiRegistry = LocateRegistry.createRegistry(Integer.parseInt(rmiPort));
         } catch (RemoteException e2) {

@@ -34,7 +34,6 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
-    @Override
     public String getRMIName() {
         return myRMIName;
     }
@@ -52,7 +51,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
             tm = (TransactionManager) Naming.lookup(rmiPort + TransactionManager.RMIName);
             System.out.println(myRMIName + " bound to TM");
         } catch (Exception e) {
-            System.err.println(myRMIName + " cannot bind to TM:" + e);
+            System.err.println(myRMIName + " cannot bind to TM:\n" + e);
             return false;
         }
 

@@ -17,7 +17,11 @@ import java.util.List;
  */
 public interface ResourceManager<T extends ResourceItem> extends Remote {
 
-    String getRMIName();
+    String RMI_NAME_RM_CARS = "rm.cars";
+    String RMI_NAME_RM_CUSTOMERS = "rm.customers";
+    String RMI_NAME_RM_FLIGHTS = "rm.flights";
+    String RMI_NAME_RM_HOTEL = "rm.hotels";
+    String RMI_NAME_RM_RESERVATIONS = "rm.reservations";
 
     boolean reconnect() throws RemoteException;
 

@@ -14,10 +14,12 @@ public class FlightResourceManager extends ResourceManagerImpl<Flight> {
 
     private FlightResourceManager() throws RemoteException {
         super();
-        myRMIName = "RMFlights";
+        myRMIName = ResourceManager.RMI_NAME_RM_FLIGHTS;
     }
 
     public static void main(String args[]) {
+        myRMIName = ResourceManager.RMI_NAME_RM_FLIGHTS;
+
         Properties prop = new Properties();
         try {
             prop.load(new FileInputStream("conf/ddb.conf"));
@@ -26,7 +28,7 @@ public class FlightResourceManager extends ResourceManagerImpl<Flight> {
             return;
         }
 
-        String rmiPort = prop.getProperty("rm." + myRMIName + ".port");
+        String rmiPort = prop.getProperty(myRMIName + ".port");
         try {
             _rmiRegistry = LocateRegistry.createRegistry(Integer.parseInt(rmiPort));
         } catch (RemoteException e2) {

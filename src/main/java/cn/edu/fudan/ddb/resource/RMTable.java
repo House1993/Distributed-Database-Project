@@ -19,13 +19,13 @@ public class RMTable implements Serializable {
 
     private transient LockManager lm;
 
-    private String tablename;
+    private String tableName;
 
     protected int xid;
 
-    public RMTable(String tablename, RMTable parent, int xid, LockManager lm) {
+    public RMTable(String tableName, RMTable parent, int xid, LockManager lm) {
         this.xid = xid;
-        this.tablename = tablename;
+        this.tableName = tableName;
         this.parent = parent;
         this.lm = lm;
     }
@@ -38,20 +38,20 @@ public class RMTable implements Serializable {
         this.parent = parent;
     }
 
-    public String getTablename() {
-        return tablename;
+    public String getTableName() {
+        return tableName;
     }
 
     public void relockAll() throws DeadlockException {
         for (Map.Entry<Object, Integer> entry : locks.entrySet()) {
-            if (!lm.lock(xid, tablename + ":" + entry.getKey().toString(), entry.getValue())) {
+            if (!lm.lock(xid, tableName + ":" + entry.getKey().toString(), entry.getValue())) {
                 throw new RuntimeException();
             }
         }
     }
 
     public void lock(Object key, int lockType) throws DeadlockException {
-        if (!lm.lock(xid, tablename + ":" + key.toString(), lockType)) {
+        if (!lm.lock(xid, tableName + ":" + key.toString(), lockType)) {
             throw new RuntimeException();
         }
         locks.put(key, lockType);

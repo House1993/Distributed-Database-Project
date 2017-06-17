@@ -1,6 +1,7 @@
 package cn.edu.fudan.ddb.transaction;
 
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.io.*;
@@ -72,7 +73,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             if (committed.contains(xid)) {
                 throw new InvalidTransactionException(xid, "the transaction has already committed");
             } else {
-                throw new InvalidTransactionException(xid, "the transaction should be aborted");
+                throw new InvalidTransactionException(xid, "the transaction should be started first");
             }
         }
 
@@ -91,15 +92,16 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         return true;
     }
 
-    public boolean commit(int xid) throws RemoteException, InvalidTransactionException {
+    public void commit(int xid) throws RemoteException, InvalidTransactionException, TransactionAbortedException {
         if (!rms.containsKey(xid)) {
             if (committed.contains(xid)) {
                 System.out.println("Transaction id = " + xid + " has been committed");
-                return true;
+                return;
             } else {
-                throw new InvalidTransactionException(xid, "the transaction should be aborted");
+                throw new InvalidTransactionException(xid, "the transaction should be started first");
             }
         }
+
         for (int trytime = 1; trytime <= 10; ++trytime) {
             boolean cannot = false;
             for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
@@ -131,20 +133,28 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                 synchronized (rms) {
                     rms.remove(xid);
                 }
-                return true;
+                return;
             }
         }
-        abort(xid);
-        return false;
+        abort(xid, "Timeout");
     }
 
-    public void abort(int xid) throws RemoteException, InvalidTransactionException {
+    public void abort(int xid, String msg) throws RemoteException, InvalidTransactionException, TransactionAbortedException {
+        if (!rms.containsKey(xid)) {
+            if (committed.contains(xid)) {
+                throw new InvalidTransactionException(xid, "the transaction has already committed");
+            } else {
+                throw new InvalidTransactionException(xid, "the transaction should be started first");
+            }
+        }
+
         for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
             f.getValue().abort(xid);
         }
         synchronized (rms) {
             rms.remove(xid);
         }
+        throw new TransactionAbortedException(xid, msg);
     }
 
     public boolean iscommit(int xid) throws RemoteException {

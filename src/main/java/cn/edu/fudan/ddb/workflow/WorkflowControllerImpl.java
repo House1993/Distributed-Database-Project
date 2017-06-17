@@ -71,17 +71,30 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // TRANSACTION INTERFACE
     public int start() throws RemoteException {
-        tm.start(xidCounter);
+        while (!tm.start(xidCounter)) {
+            ++xidCounter;
+        }
+        System.out.println("Starting transaction " + xidCounter);
         return (xidCounter++);
     }
 
     public boolean commit(int xid) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        System.out.println("Committing");
+        try {
+            tm.commit(xid);
+        } catch (TransactionAbortedException | InvalidTransactionException e) {
+            System.out.println(e.getMessage());
+            return false;
+        }
+        System.out.println("Successful committing transaction " + xid);
         return true;
     }
 
     public void abort(int xid) throws RemoteException, InvalidTransactionException {
-        return;
+        try {
+            tm.abort(xid, "Manual");
+        } catch (TransactionAbortedException | InvalidTransactionException e) {
+            System.out.println(e.getMessage());
+        }
     }
 
 
@@ -276,10 +289,20 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     public boolean dieTMBeforeCommit() throws RemoteException {
+        try {
+            tm.setDieTMBeforeCommit();
+        } catch (Exception e) {
+            return false;
+        }
         return true;
     }
 
     public boolean dieTMAfterCommit() throws RemoteException {
+        try {
+            tm.setDieTMAfterCommit();
+        } catch (Exception e) {
+            return false;
+        }
         return true;
     }
 

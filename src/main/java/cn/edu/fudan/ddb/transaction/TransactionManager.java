@@ -63,7 +63,11 @@ public interface TransactionManager extends Remote {
      * @return true for committed transaction, false oppositely
      * @throws RemoteException
      */
-    boolean iscommit(int xid) throws RemoteException;
+    boolean hasCommitted(int xid) throws RemoteException;
+
+    void setDieTMBeforeCommit();
+
+    void setDieTMAfterCommit();
 
     boolean dieNow() throws RemoteException;
 

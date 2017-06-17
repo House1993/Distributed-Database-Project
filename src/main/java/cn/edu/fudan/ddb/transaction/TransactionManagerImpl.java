@@ -31,6 +31,9 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     private HashSet<Integer> committed;
     private static final String committedPath = "TM/commit";
 
+    private boolean dieTMBeforeCommit;
+    private boolean dieTMAfterCommit;
+
     public static void main(String args[]) {
         System.setSecurityManager(new RMISecurityManager());
 
@@ -62,10 +65,20 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             } else {
                 committed = new HashSet<>();
             }
+            dieTMBeforeCommit = false;
+            dieTMAfterCommit = false;
         } catch (Exception e) {
             System.out.println("Fail to initialize TM");
             e.printStackTrace();
         }
+    }
+
+    public void setDieTMBeforeCommit() {
+        dieTMBeforeCommit = true;
+    }
+
+    public void setDieTMAfterCommit() {
+        dieTMAfterCommit = true;
     }
 
     public void enlist(int xid, ResourceManagerImpl rm) throws RemoteException, InvalidTransactionException {
@@ -80,6 +93,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         synchronized (rms) {
             rms.get(xid).put(rm.getRMIName(), rm);
         }
+        System.out.println("RM " + rm.getRMIName() + " is related to transaction " + xid);
     }
 
     public boolean start(int xid) throws RemoteException {
@@ -106,6 +120,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             boolean cannot = false;
             for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
                 if (!f.getValue().prepare(xid)) {
+                    System.out.println("RM " + f.getValue().getRMIName() + " has not prepared for transaction " + xid + " on " + trytime + "th try");
                     cannot = true;
                     break;
                 }
@@ -117,6 +132,10 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                     e.printStackTrace();
                 }
             } else {
+                if (dieTMBeforeCommit) {
+                    System.out.println("TM should die before commit");
+                    dieNow();
+                }
                 synchronized (committed) {
                     committed.add(xid);
                     try {
@@ -126,6 +145,10 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                         System.out.println("Fail to write committed");
                         System.exit(1);
                     }
+                }
+                if (dieTMAfterCommit) {
+                    System.out.println("TM should die after commit");
+                    dieNow();
                 }
                 for (Map.Entry<String, ResourceManagerImpl> i : rms.get(xid).entrySet()) {
                     i.getValue().commit(xid);
@@ -157,11 +180,12 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         throw new TransactionAbortedException(xid, msg);
     }
 
-    public boolean iscommit(int xid) throws RemoteException {
+    public boolean hasCommitted(int xid) throws RemoteException {
         return committed.contains(xid);
     }
 
     public boolean dieNow() throws RemoteException {
+        System.out.println("TM die");
         System.exit(1);
         // We won't ever get here since we exited above;
         // but we still need it to please the compiler.

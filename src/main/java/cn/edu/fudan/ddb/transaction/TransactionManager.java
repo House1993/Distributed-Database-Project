@@ -1,14 +1,14 @@
 package cn.edu.fudan.ddb.transaction;
 
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
+import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
 
 /**
- * Interface for the Transaction Manager of the Distributed Travel
- * Reservation System.
+ * Interface for the Transaction Manager of the Distributed Travel Reservation System.
  */
 
 public interface TransactionManager extends Remote {
@@ -39,19 +39,22 @@ public interface TransactionManager extends Remote {
      * otherwise, return true
      *
      * @param xid transaction id
-     * @return true for commit successfully, false oppositely
      * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
+     * @throws TransactionAbortedException if the transaction was aborted
      * @throws RemoteException
      */
-    boolean commit(int xid) throws RemoteException, InvalidTransactionException;
+    void commit(int xid) throws RemoteException, InvalidTransactionException, TransactionAbortedException;
 
     /**
      * abort transaction id = @xid
      *
      * @param xid transaction id
+     * @param msg the reason why the transaction was aborted
+     * @throws InvalidTransactionException maybe the transaction id = @xid is not started or has committed/aborted
+     * @throws TransactionAbortedException if the transaction was aborted. always throw
      * @throws RemoteException
      */
-    void abort(int xid) throws RemoteException, InvalidTransactionException;
+    void abort(int xid, String msg) throws RemoteException, InvalidTransactionException, TransactionAbortedException;
 
     /**
      * check a transaction id = @xid whether it has committed

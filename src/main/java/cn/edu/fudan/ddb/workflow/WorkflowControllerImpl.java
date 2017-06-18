@@ -1,9 +1,6 @@
 package cn.edu.fudan.ddb.workflow;
 
-import cn.edu.fudan.ddb.entity.Car;
-import cn.edu.fudan.ddb.entity.Flight;
-import cn.edu.fudan.ddb.entity.Hotel;
-import cn.edu.fudan.ddb.entity.Reservation;
+import cn.edu.fudan.ddb.entity.*;
 import cn.edu.fudan.ddb.exception.DeadlockException;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
@@ -25,7 +22,6 @@ import java.util.List;
  */
 public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject implements WorkflowController {
 
-    //    private int flightcounter, flightprice, carscounter, carsprice, roomscounter, roomsprice;
     private int xidCounter;
 
     private ResourceManager rmFlights = null;
@@ -42,19 +38,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     public static final String ReservationsTable = "reservations";
 
     public WorkflowControllerImpl() throws RemoteException {
-//        flightcounter = 0;
-//        flightprice = 0;
-//        carscounter = 0;
-//        carsprice = 0;
-//        roomscounter = 0;
-//        roomsprice = 0;
-
         xidCounter = 1;
 
         while (!reconnect()) {
             // would be better to sleep a while
             try {
-                Thread.sleep(1000);
+                Thread.sleep(500);
             } catch (Exception e) {
             }
         }
@@ -111,8 +100,6 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // ADMINISTRATIVE INTERFACE
     public boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        flightcounter += numSeats;
-//        flightprice = price;
         return true;
     }
 
@@ -160,7 +147,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int avail = 0;
         try {
             Object res = rmFlights.query(xid, FlightsTable, flightNum);
-            if (res == null) {
+            if (res == null || ((Flight) res).isDeleted()) {
                 avail = -1;
             } else {
                 avail = ((Flight) res).getNumAvail();
@@ -175,7 +162,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int price = 0;
         try {
             Object res = rmFlights.query(xid, FlightsTable, flightNum);
-            if (res == null) {
+            if (res == null || ((Flight) res).isDeleted()) {
                 price = -1;
             } else {
                 price = (int) ((Flight) res).getPrice();
@@ -190,7 +177,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int avail = 0;
         try {
             Object res = rmRooms.query(xid, RoomsTable, location);
-            if (res == null) {
+            if (res == null || ((Hotel) res).isDeleted()) {
                 avail = -1;
             } else {
                 avail = ((Hotel) res).getNumAvail();
@@ -205,7 +192,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int price = 0;
         try {
             Object res = rmRooms.query(xid, RoomsTable, location);
-            if (res == null) {
+            if (res == null || ((Hotel) res).isDeleted()) {
                 price = -1;
             } else {
                 price = (int) ((Hotel) res).getPrice();
@@ -220,7 +207,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int avail = 0;
         try {
             Object res = rmCars.query(xid, CarsTable, location);
-            if (res == null) {
+            if (res == null || ((Car) res).isDeleted()) {
                 avail = -1;
             } else {
                 avail = ((Car) res).getNumAvail();
@@ -235,7 +222,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int price = 0;
         try {
             Object res = rmCars.query(xid, CarsTable, location);
-            if (res == null) {
+            if (res == null || ((Car) res).isDeleted()) {
                 price = -1;
             } else {
                 price = (int) ((Car) res).getPrice();
@@ -250,11 +237,14 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         int total = 0;
         try {
             Object res = rmCustomers.query(xid, CustomersTable, custName);
-            if (res == null) {
+            if (res == null || ((Customer) res).isDeleted()) {
                 return -1;
             }
             List<Reservation> records = rmReservations.query(xid, ReservationsTable);
             for (Reservation r : records) {
+                if (r.isDeleted()) {
+                    continue;
+                }
                 if (r.getCustName().equals(custName)) {
                     switch (r.getResvType()) {
                         case CAR: {

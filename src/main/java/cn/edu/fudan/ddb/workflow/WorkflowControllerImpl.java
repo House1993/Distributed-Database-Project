@@ -1,5 +1,9 @@
 package cn.edu.fudan.ddb.workflow;
 
+import cn.edu.fudan.ddb.entity.Car;
+import cn.edu.fudan.ddb.entity.Flight;
+import cn.edu.fudan.ddb.entity.Hotel;
+import cn.edu.fudan.ddb.exception.DeadlockException;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 import cn.edu.fudan.ddb.resource.FlightResourceManager;
@@ -20,23 +24,29 @@ import java.util.List;
  */
 public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject implements WorkflowController {
 
-    protected int flightcounter, flightprice, carscounter, carsprice, roomscounter, roomsprice;
-    protected int xidCounter;
+    //    private int flightcounter, flightprice, carscounter, carsprice, roomscounter, roomsprice;
+    private int xidCounter;
 
-    protected ResourceManager rmFlights = null;
-    protected ResourceManager rmRooms = null;
-    protected ResourceManager rmCars = null;
-    protected ResourceManager rmCustomers = null;
-    protected ResourceManager rmReservations = null;
-    protected TransactionManager tm = null;
+    private ResourceManager rmFlights = null;
+    private ResourceManager rmRooms = null;
+    private ResourceManager rmCars = null;
+    private ResourceManager rmCustomers = null;
+    private ResourceManager rmReservations = null;
+    private TransactionManager tm = null;
+
+    public static final String FlightsTable = "flights";
+    public static final String RoomsTable = "hotesl";
+    public static final String CarsTable = "cars";
+    public static final String CustomersTable = "customers";
+    public static final String ReservationsTable = "reservations";
 
     public WorkflowControllerImpl() throws RemoteException {
-        flightcounter = 0;
-        flightprice = 0;
-        carscounter = 0;
-        carsprice = 0;
-        roomscounter = 0;
-        roomsprice = 0;
+//        flightcounter = 0;
+//        flightprice = 0;
+//        carscounter = 0;
+//        carsprice = 0;
+//        roomscounter = 0;
+//        roomsprice = 0;
 
         xidCounter = 1;
 
@@ -100,38 +110,38 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // ADMINISTRATIVE INTERFACE
     public boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        flightcounter += numSeats;
-        flightprice = price;
+//        flightcounter += numSeats;
+//        flightprice = price;
         return true;
     }
 
     public boolean deleteFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        flightcounter = 0;
-        flightprice = 0;
+//        flightcounter = 0;
+//        flightprice = 0;
         return true;
     }
 
     public boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        roomscounter += numRooms;
-        roomsprice = price;
+//        roomscounter += numRooms;
+//        roomsprice = price;
         return true;
     }
 
     public boolean deleteRooms(int xid, String location, int numRooms) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        roomscounter = 0;
-        roomsprice = 0;
+//        roomscounter = 0;
+//        roomsprice = 0;
         return true;
     }
 
     public boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        carscounter += numCars;
-        carsprice = price;
+//        carscounter += numCars;
+//        carsprice = price;
         return true;
     }
 
     public boolean deleteCars(int xid, String location, int numCars) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        carscounter = 0;
-        carsprice = 0;
+//        carscounter = 0;
+//        carsprice = 0;
         return true;
     }
 
@@ -146,27 +156,93 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // QUERY INTERFACE
     public int queryFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return flightcounter;
+        int avail = 0;
+        try {
+            Object res = rmFlights.query(xid, FlightsTable, flightNum);
+            if (res == null) {
+                avail = -1;
+            } else {
+                avail = ((Flight) res).getNumAvail();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return avail;
     }
 
     public int queryFlightPrice(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return flightprice;
+        int price = 0;
+        try {
+            Object res = rmFlights.query(xid, FlightsTable, flightNum);
+            if (res == null) {
+                price = -1;
+            } else {
+                price = (int) ((Flight) res).getPrice();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return price;
     }
 
     public int queryRooms(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return roomscounter;
+        int avail = 0;
+        try {
+            Object res = rmRooms.query(xid, RoomsTable, location);
+            if (res == null) {
+                avail = -1;
+            } else {
+                avail = ((Hotel) res).getNumAvail();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return avail;
     }
 
     public int queryRoomsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return roomsprice;
+        int price = 0;
+        try {
+            Object res = rmRooms.query(xid, RoomsTable, location);
+            if (res == null) {
+                price = -1;
+            } else {
+                price = (int) ((Hotel) res).getPrice();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return price;
     }
 
     public int queryCars(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return carscounter;
+        int avail = 0;
+        try {
+            Object res = rmCars.query(xid, CarsTable, location);
+            if (res == null) {
+                avail = -1;
+            } else {
+                avail = ((Car) res).getNumAvail();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return avail;
     }
 
     public int queryCarsPrice(int xid, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return carsprice;
+        int price = 0;
+        try {
+            Object res = rmCars.query(xid, CarsTable, location);
+            if (res == null) {
+                price = -1;
+            } else {
+                price = (int) ((Car) res).getPrice();
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
+        return price;
     }
 
     public int queryCustomerBill(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
@@ -176,17 +252,17 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // RESERVATION INTERFACE
     public boolean reserveFlight(int xid, String custName, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        flightcounter--;
+//        flightcounter--;
         return true;
     }
 
     public boolean reserveCar(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        carscounter--;
+//        carscounter--;
         return true;
     }
 
     public boolean reserveRoom(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        roomscounter--;
+//        roomscounter--;
         return true;
     }
 
@@ -222,7 +298,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         }
 
         try {
-            if (rmFlights.reconnect() && rmRooms.reconnect() && rmCars.reconnect() && rmCustomers.reconnect()) {
+            if (rmFlights.testConnection() && rmRooms.testConnection() && rmCars.testConnection() && rmCustomers.testConnection()) {
                 return true;
             }
         } catch (Exception e) {

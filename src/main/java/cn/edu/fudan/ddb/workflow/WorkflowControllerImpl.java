@@ -3,6 +3,7 @@ package cn.edu.fudan.ddb.workflow;
 import cn.edu.fudan.ddb.entity.Car;
 import cn.edu.fudan.ddb.entity.Flight;
 import cn.edu.fudan.ddb.entity.Hotel;
+import cn.edu.fudan.ddb.entity.Reservation;
 import cn.edu.fudan.ddb.exception.DeadlockException;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
@@ -246,7 +247,41 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     public int queryCustomerBill(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-        return 0;
+        int total = 0;
+        try {
+            Object res = rmCustomers.query(xid, CustomersTable, custName);
+            if (res == null) {
+                return -1;
+            }
+            List<Reservation> records = rmReservations.query(xid, ReservationsTable);
+            for (Reservation r : records) {
+                if (r.getCustName().equals(custName)) {
+                    switch (r.getResvType()) {
+                        case CAR: {
+                            res = rmCars.query(xid, CarsTable, r.getResvKey());
+                            total += (int) ((Car) res).getPrice();
+                            break;
+                        }
+                        case FLIGHT: {
+                            res = rmFlights.query(xid, FlightsTable, r.getResvKey());
+                            total += (int) ((Flight) res).getPrice();
+                            break;
+                        }
+                        case HOTEL: {
+                            res = rmRooms.query(xid, RoomsTable, r.getResvKey());
+                            total += (int) ((Hotel) res).getPrice();
+                            break;
+                        }
+                        default: {
+                            System.out.println("Wrong reservation " + r.toString());
+                        }
+                    }
+                }
+            }
+        } catch (DeadlockException e) {
+            e.printStackTrace();
+        }
+        return total;
     }
 
 

@@ -100,6 +100,30 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // ADMINISTRATIVE INTERFACE
     public boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+        if (numSeats < 0) {
+            System.out.println("Add " + numSeats + " seats to a flight");
+            return false;
+        }
+        if (flightNum == null) {
+            System.out.println("add flight number is null");
+            return false;
+        }
+        try {
+            Object check = rmFlights.query(xid, FlightsTable, flightNum);
+            if (check == null) {
+                rmFlights.insert(xid, FlightsTable, new Flight(flightNum, Math.max(price, 0), numSeats, numSeats));
+            } else {
+                Flight tmp = (Flight) check;
+                if (price < 0) {
+                    price = (int) tmp.getPrice();
+                }
+                int total = tmp.getNumSeats() + numSeats;
+                int avail = tmp.getNumAvail() + numSeats;
+                rmFlights.update(xid, FlightsTable, flightNum, new Flight(flightNum, price, total, avail));
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+        }
         return true;
     }
 

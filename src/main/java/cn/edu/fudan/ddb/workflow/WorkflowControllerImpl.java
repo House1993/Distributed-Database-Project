@@ -212,22 +212,107 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     public boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        carscounter += numCars;
-//        carsprice = price;
+        if (numCars < 0) {
+            System.out.println("Add " + numCars + " cars");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Object check = rmCars.query(xid, CarsTable, location);
+            if (check == null || ((Car) check).isDeleted()) {
+                rmCars.insert(xid, CarsTable, new Car(location, Math.max(price, 0), numCars, numCars));
+            } else {
+                Car tmp = (Car) check;
+                if (price < 0) {
+                    price = (int) tmp.getPrice();
+                }
+                int total = tmp.getNumCars() + numCars;
+                int avail = tmp.getNumAvail() + numCars;
+                rmCars.update(xid, CarsTable, location, new Car(location, price, total, avail));
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean deleteCars(int xid, String location, int numCars) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        carscounter = 0;
-//        carsprice = 0;
+        if (numCars < 0) {
+            System.out.println("Delete " + numCars + " cars");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Object check = rmCars.query(xid, CarsTable, location);
+            if (check == null || ((Car) check).isDeleted()) {
+                System.out.println("There is no car in " + location);
+                return false;
+            }
+            Car tmp = (Car) check;
+            int total = tmp.getNumCars() - numCars;
+            int avail = tmp.getNumAvail() - numCars;
+            if (avail < 0) {
+                System.out.println("There is not enough cars to delete in " + location);
+                return false;
+            }
+            rmCars.update(xid, CarsTable, location, new Car(location, tmp.getPrice(), total, avail));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean newCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+        if (custName == null) {
+            System.out.println("Customer name is null");
+            return false;
+        }
+        try {
+            Customer check = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            if (check != null && !check.isDeleted()) {
+                return true;
+            }
+            rmCustomers.insert(xid, CustomersTable, new Customer(custName));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean deleteCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+        if (custName == null) {
+            System.out.println("Customer name is null");
+            return false;
+        }
+        try {
+            Customer check = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            if (check == null || check.isDeleted()) {
+                System.out.println("The customer which named " + custName + " does not exist");
+                return false;
+            }
+            rmCustomers.delete(xid, CustomersTable, custName);
+            List<Reservation> records = rmReservations.query(xid, ReservationsTable);
+            for (Reservation r : records) {
+                if (r.isDeleted()) {
+                    continue;
+                }
+                if (r.getCustName().equals(custName)) {
+                    rmReservations.delete(xid, ReservationsTable, new Reservation(custName, r.getResvType(), r.getResvKey()));
+                }
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
@@ -367,21 +452,115 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     // RESERVATION INTERFACE
     public boolean reserveFlight(int xid, String custName, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        flightcounter--;
+        if (custName == null) {
+            System.out.println("Customer name is null");
+            return false;
+        }
+        if (flightNum == null) {
+            System.out.println("Flight number is null");
+            return false;
+        }
+        try {
+            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            if (checkCust == null || checkCust.isDeleted()) {
+                System.out.println("There is no customer named " + custName);
+                return false;
+            }
+            Flight checkFlight = (Flight) (rmFlights.query(xid, FlightsTable, flightNum));
+            if (checkFlight == null || checkFlight.isDeleted()) {
+                System.out.println("There is no flight which number is " + flightNum);
+                return false;
+            }
+            if (checkFlight.getNumAvail() == 0) {
+                System.out.println("There is no enough seat on flight which number is " + flightNum);
+                return false;
+            }
+            rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.FLIGHT, flightNum));
+            rmFlights.update(xid, FlightsTable, flightNum, new Flight(flightNum, checkFlight.getPrice(), checkFlight.getNumSeats() - 1, checkFlight.getNumAvail() - 1));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean reserveCar(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        carscounter--;
+        if (custName == null) {
+            System.out.println("Customer name is null");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            if (checkCust == null || checkCust.isDeleted()) {
+                System.out.println("There is no customer named " + custName);
+                return false;
+            }
+            Car checkCar = (Car) (rmCars.query(xid, CarsTable, location));
+            if (checkCar == null || checkCar.isDeleted() || checkCar.getNumAvail() == 0) {
+                System.out.println("There is no car in " + location);
+                return false;
+            }
+            rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.CAR, location));
+            rmCars.update(xid, CarsTable, location, new Car(location, checkCar.getPrice(), checkCar.getNumCars() - 1, checkCar.getNumAvail() - 1));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean reserveRoom(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        roomscounter--;
+        if (custName == null) {
+            System.out.println("Customer name is null");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            if (checkCust == null || checkCust.isDeleted()) {
+                System.out.println("There is no customer named " + custName);
+                return false;
+            }
+            Hotel checkRoom = (Hotel) (rmRooms.query(xid, RoomsTable, location));
+            if (checkRoom == null || checkRoom.isDeleted() || checkRoom.getNumAvail() == 0) {
+                System.out.println("There is no room in " + location);
+                return false;
+            }
+            rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.HOTEL, location));
+            rmRooms.update(xid, RoomsTable, location, new Hotel(location, checkRoom.getPrice(), checkRoom.getNumRooms() - 1, checkRoom.getNumAvail() - 1));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean reserveItinerary(int xid, String custName, List flightNumList, String location, boolean needCar, boolean needRoom) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
+        for (Object flightNum : flightNumList) {
+            boolean res = reserveFlight(xid, custName, (String) flightNum);
+            if (!res) {
+                return false;
+            }
+        }
+        if (needCar) {
+            boolean res = reserveCar(xid, custName, location);
+            if (!res) {
+                return false;
+            }
+        }
+        if (needRoom) {
+            boolean res = reserveRoom(xid, custName, location);
+            if (!res) {
+                return false;
+            }
+        }
         return true;
     }
 

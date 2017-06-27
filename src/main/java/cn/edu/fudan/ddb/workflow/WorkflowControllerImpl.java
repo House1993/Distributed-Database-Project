@@ -105,12 +105,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         if (flightNum == null) {
-            System.out.println("add flight number is null");
+            System.out.println("Flight number is null");
             return false;
         }
         try {
             Object check = rmFlights.query(xid, FlightsTable, flightNum);
-            if (check == null) {
+            if (check == null || ((Flight) check).isDeleted()) {
                 rmFlights.insert(xid, FlightsTable, new Flight(flightNum, Math.max(price, 0), numSeats, numSeats));
             } else {
                 Flight tmp = (Flight) check;
@@ -123,25 +123,91 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             }
         } catch (DeadlockException e) {
             tm.abort(xid, "Timeout");
+            return false;
         }
         return true;
     }
 
     public boolean deleteFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        flightcounter = 0;
-//        flightprice = 0;
+        if (flightNum == null) {
+            System.out.println("Flight number is null");
+            return false;
+        }
+        try {
+            Object check = rmFlights.query(xid, FlightsTable, flightNum);
+            if (check == null || ((Flight) check).isDeleted()) {
+                System.out.println("The flight which number is " + flightNum + " does not exist");
+                return false;
+            }
+            Flight tmp = (Flight) check;
+            if (tmp.getNumAvail() != tmp.getNumSeats()) {
+                System.out.println("Can not delete the flight because of someone's reservations");
+                return false;
+            }
+            rmFlights.delete(xid, FlightsTable, flightNum);
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        roomscounter += numRooms;
-//        roomsprice = price;
+        if (numRooms < 0) {
+            System.out.println("Add " + numRooms + " rooms to a hotel");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Object check = rmRooms.query(xid, RoomsTable, location);
+            if (check == null || ((Hotel) check).isDeleted()) {
+                rmRooms.insert(xid, RoomsTable, new Hotel(location, Math.max(price, 0), numRooms, numRooms));
+            } else {
+                Hotel tmp = (Hotel) check;
+                if (price < 0) {
+                    price = (int) tmp.getPrice();
+                }
+                int total = tmp.getNumRooms() + numRooms;
+                int avail = tmp.getNumAvail() + numRooms;
+                rmRooms.update(xid, RoomsTable, location, new Hotel(location, price, total, avail));
+            }
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 
     public boolean deleteRooms(int xid, String location, int numRooms) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
-//        roomscounter = 0;
-//        roomsprice = 0;
+        if (numRooms < 0) {
+            System.out.println("Delete " + numRooms + " rooms to a hotel");
+            return false;
+        }
+        if (location == null) {
+            System.out.println("Location is null");
+            return false;
+        }
+        try {
+            Object check = rmRooms.query(xid, RoomsTable, location);
+            if (check == null || ((Hotel) check).isDeleted()) {
+                System.out.println("The hotel which location is " + location + " does not exist");
+                return false;
+            }
+            Hotel tmp = (Hotel) check;
+            int total = tmp.getNumRooms() - numRooms;
+            int avail = tmp.getNumAvail() - numRooms;
+            if (avail < 0) {
+                System.out.println("The hotel which location is " + location + " does not have enough rooms to delete");
+                return false;
+            }
+            rmRooms.update(xid, RoomsTable, location, new Hotel(location, tmp.getPrice(), total, avail));
+        } catch (DeadlockException e) {
+            tm.abort(xid, "Timeout");
+            return false;
+        }
         return true;
     }
 

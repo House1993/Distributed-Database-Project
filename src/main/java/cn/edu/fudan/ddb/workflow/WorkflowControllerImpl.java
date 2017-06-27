@@ -425,58 +425,113 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     public boolean dieNow(String who) throws RemoteException {
+        boolean success = true;
         if (who.equals(TransactionManager.RMIName) || who.equals("ALL")) {
             try {
                 tm.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(ResourceManager.RMI_NAME_RM_FLIGHTS) || who.equals("ALL")) {
             try {
                 rmFlights.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(ResourceManager.RMI_NAME_RM_HOTEL) || who.equals("ALL")) {
             try {
                 rmRooms.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(ResourceManager.RMI_NAME_RM_CARS) || who.equals("ALL")) {
             try {
                 rmCars.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(ResourceManager.RMI_NAME_RM_CUSTOMERS) || who.equals("ALL")) {
             try {
                 rmCustomers.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(ResourceManager.RMI_NAME_RM_RESERVATIONS) || who.equals("ALL")) {
             try {
                 rmReservations.dieNow();
             } catch (RemoteException e) {
+                success = false;
             }
         }
         if (who.equals(WorkflowController.RMIName) || who.equals("ALL")) {
             System.exit(1);
         }
-        return true;
+        return success;
     }
 
     public boolean dieRMAfterEnlist(String who) throws RemoteException {
-        return true;
+        return dieRMWhen(who, "AfterEnlist");
     }
 
     public boolean dieRMBeforePrepare(String who) throws RemoteException {
-        return true;
+        return dieRMWhen(who, "BeforePrepare");
     }
 
     public boolean dieRMAfterPrepare(String who) throws RemoteException {
-        return true;
+        return dieRMWhen(who, "AfterPrepare");
+    }
+
+    public boolean dieRMBeforeCommit(String who) throws RemoteException {
+        return dieRMWhen(who, "BeforeCommit");
+    }
+
+    public boolean dieRMBeforeAbort(String who) throws RemoteException {
+        return dieRMWhen(who, "BeforeAbort");
+    }
+
+    private boolean dieRMWhen(String who, String dieTime) throws RemoteException {
+        boolean success = true;
+        if (who.equals(ResourceManager.RMI_NAME_RM_FLIGHTS) || who.equals("ALL")) {
+            try {
+                rmFlights.setDieTime(dieTime);
+            } catch (RemoteException e) {
+                success = false;
+            }
+        }
+        if (who.equals(ResourceManager.RMI_NAME_RM_HOTEL) || who.equals("ALL")) {
+            try {
+                rmRooms.setDieTime(dieTime);
+            } catch (RemoteException e) {
+                success = false;
+            }
+        }
+        if (who.equals(ResourceManager.RMI_NAME_RM_CARS) || who.equals("ALL")) {
+            try {
+                rmCars.setDieTime(dieTime);
+            } catch (RemoteException e) {
+                success = false;
+            }
+        }
+        if (who.equals(ResourceManager.RMI_NAME_RM_CUSTOMERS) || who.equals("ALL")) {
+            try {
+                rmCustomers.setDieTime(dieTime);
+            } catch (RemoteException e) {
+                success = false;
+            }
+        }
+        if (who.equals(ResourceManager.RMI_NAME_RM_RESERVATIONS) || who.equals("ALL")) {
+            try {
+                rmReservations.setDieTime(dieTime);
+            } catch (RemoteException e) {
+                success = false;
+            }
+        }
+        return success;
     }
 
     public boolean dieTMBeforeCommit() throws RemoteException {
@@ -494,14 +549,6 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         } catch (Exception e) {
             return false;
         }
-        return true;
-    }
-
-    public boolean dieRMBeforeCommit(String who) throws RemoteException {
-        return true;
-    }
-
-    public boolean dieRMBeforeAbort(String who) throws RemoteException {
         return true;
     }
 }

@@ -25,6 +25,8 @@ public interface ResourceManager<T extends ResourceItem> extends Remote {
 
     boolean dieNow() throws RemoteException;
 
+    boolean setDieTime(String dieTime) throws RemoteException;
+
     List<T> query(int xid, String tableName) throws DeadlockException, InvalidTransactionException, RemoteException;
 
     T query(int xid, String tableName, Object key) throws DeadlockException, InvalidTransactionException, RemoteException;

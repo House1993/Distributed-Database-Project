@@ -268,6 +268,12 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     }
 
     @Override
+    public boolean setDieTime(String dieTime) throws RemoteException {
+        ResourceManagerImpl.dieTime = dieTime;
+        return !dieTime.equals("now") || dieNow();
+    }
+
+    @Override
     public List<T> query(int txId, String tableName) throws DeadlockException, InvalidTransactionException, RemoteException {
         if (txId < 0) {
             throw new InvalidTransactionException(txId, "Transaction ID must be positive.");

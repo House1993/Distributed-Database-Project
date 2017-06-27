@@ -22,20 +22,20 @@ import java.util.List;
  */
 public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject implements WorkflowController {
 
+    private static final String FlightsTable = "flights";
+    private static final String RoomsTable = "hotels";
+    private static final String CarsTable = "cars";
+    private static final String CustomersTable = "customers";
+    private static final String ReservationsTable = "reservations";
+
     private int xidCounter;
 
-    private ResourceManager rmFlights = null;
-    private ResourceManager rmRooms = null;
-    private ResourceManager rmCars = null;
-    private ResourceManager rmCustomers = null;
-    private ResourceManager rmReservations = null;
+    private ResourceManager<Flight> rmFlights = null;
+    private ResourceManager<Hotel> rmRooms = null;
+    private ResourceManager<Car> rmCars = null;
+    private ResourceManager<Customer> rmCustomers = null;
+    private ResourceManager<Reservation> rmReservations = null;
     private TransactionManager tm = null;
-
-    public static final String FlightsTable = "flights";
-    public static final String RoomsTable = "hotesl";
-    public static final String CarsTable = "cars";
-    public static final String CustomersTable = "customers";
-    public static final String ReservationsTable = "reservations";
 
     public WorkflowControllerImpl() throws RemoteException {
         xidCounter = 1;
@@ -44,13 +44,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             // would be better to sleep a while
             try {
                 Thread.sleep(500);
-            } catch (Exception e) {
-            }
+            } catch (Exception ignored) {}
         }
     }
 
     public static void main(String args[]) {
-        System.setSecurityManager(new RMISecurityManager());
+        System.setSecurityManager(new SecurityManager());
 
         String rmiPort = System.getProperty("rmiPort");
         if (rmiPort == null) {
@@ -276,7 +275,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         try {
-            Customer check = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            Customer check = rmCustomers.query(xid, CustomersTable, custName);
             if (check != null && !check.isDeleted()) {
                 return true;
             }
@@ -294,7 +293,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         try {
-            Customer check = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            Customer check = rmCustomers.query(xid, CustomersTable, custName);
             if (check == null || check.isDeleted()) {
                 System.out.println("The customer which named " + custName + " does not exist");
                 return false;
@@ -461,12 +460,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         try {
-            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
                 System.out.println("There is no customer named " + custName);
                 return false;
             }
-            Flight checkFlight = (Flight) (rmFlights.query(xid, FlightsTable, flightNum));
+            Flight checkFlight = rmFlights.query(xid, FlightsTable, flightNum);
             if (checkFlight == null || checkFlight.isDeleted()) {
                 System.out.println("There is no flight which number is " + flightNum);
                 return false;
@@ -494,12 +493,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         try {
-            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
                 System.out.println("There is no customer named " + custName);
                 return false;
             }
-            Car checkCar = (Car) (rmCars.query(xid, CarsTable, location));
+            Car checkCar = rmCars.query(xid, CarsTable, location);
             if (checkCar == null || checkCar.isDeleted() || checkCar.getNumAvail() == 0) {
                 System.out.println("There is no car in " + location);
                 return false;
@@ -523,12 +522,12 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             return false;
         }
         try {
-            Customer checkCust = (Customer) (rmCustomers.query(xid, CustomersTable, custName));
+            Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
                 System.out.println("There is no customer named " + custName);
                 return false;
             }
-            Hotel checkRoom = (Hotel) (rmRooms.query(xid, RoomsTable, location));
+            Hotel checkRoom = rmRooms.query(xid, RoomsTable, location);
             if (checkRoom == null || checkRoom.isDeleted() || checkRoom.getNumAvail() == 0) {
                 System.out.println("There is no room in " + location);
                 return false;
@@ -565,6 +564,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     }
 
     // TECHNICAL/TESTING INTERFACE
+    @SuppressWarnings("unchecked")
     public boolean reconnect() throws RemoteException {
         String rmiPort = System.getProperty("rmiPort");
         if (rmiPort == null) {

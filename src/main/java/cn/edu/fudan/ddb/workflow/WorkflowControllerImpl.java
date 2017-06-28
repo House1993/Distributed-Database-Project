@@ -4,14 +4,16 @@ import cn.edu.fudan.ddb.entity.*;
 import cn.edu.fudan.ddb.exception.DeadlockException;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
-import cn.edu.fudan.ddb.resource.FlightResourceManager;
 import cn.edu.fudan.ddb.resource.ResourceManager;
 import cn.edu.fudan.ddb.transaction.TransactionManager;
 
+import java.io.FileInputStream;
 import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.List;
+import java.util.Properties;
 
 /**
  * Workflow Controller for the Distributed Travel Reservation System.
@@ -37,6 +39,8 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     private ResourceManager<Reservation> rmReservations = null;
     private TransactionManager tm = null;
 
+    protected static Registry _rmiRegistry = null;
+
     public WorkflowControllerImpl() throws RemoteException {
         xidCounter = 1;
 
@@ -44,19 +48,32 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             // would be better to sleep a while
             try {
                 Thread.sleep(500);
-            } catch (Exception ignored) {}
+            } catch (Exception ignored) {
+            }
         }
     }
 
     public static void main(String args[]) {
-        System.setSecurityManager(new SecurityManager());
+//        System.setSecurityManager(new SecurityManager());
 
-        String rmiPort = System.getProperty("rmiPort");
-        if (rmiPort == null) {
-            rmiPort = "";
-        } else if (!rmiPort.equals("")) {
-            rmiPort = "//:" + rmiPort + "/";
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream("conf/ddb.conf"));
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            return;
         }
+
+        String rmiPort = prop.getProperty("wc.port");
+
+        try {
+            _rmiRegistry = LocateRegistry.createRegistry(Integer.parseInt(rmiPort));
+        } catch (RemoteException e2) {
+            e2.printStackTrace();
+            return;
+        }
+
+        rmiPort = "//localhost:" + rmiPort + "/";
 
         try {
             WorkflowControllerImpl obj = new WorkflowControllerImpl();
@@ -566,25 +583,26 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     // TECHNICAL/TESTING INTERFACE
     @SuppressWarnings("unchecked")
     public boolean reconnect() throws RemoteException {
-        String rmiPort = System.getProperty("rmiPort");
-        if (rmiPort == null) {
-            rmiPort = "";
-        } else if (!rmiPort.equals("")) {
-            rmiPort = "//:" + rmiPort + "/";
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream("conf/ddb.conf"));
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            return false;
         }
 
         try {
-            rmFlights = (ResourceManager) Naming.lookup(rmiPort + FlightResourceManager.RMI_NAME_RM_FLIGHTS);
+            rmFlights = (ResourceManager) Naming.lookup("//localhost:" + prop.getProperty(ResourceManager.RMI_NAME_RM_FLIGHTS + ".port") + "/" + ResourceManager.RMI_NAME_RM_FLIGHTS);
             System.out.println("WC bound to RMFlights");
-            rmRooms = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_HOTEL);
+            rmRooms = (ResourceManager) Naming.lookup("//localhost:" + prop.getProperty(ResourceManager.RMI_NAME_RM_HOTEL + ".port") + "/" + ResourceManager.RMI_NAME_RM_HOTEL);
             System.out.println("WC bound to RMRooms");
-            rmCars = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_CARS);
+            rmCars = (ResourceManager) Naming.lookup("//localhost:" + prop.getProperty(ResourceManager.RMI_NAME_RM_CARS + ".port") + "/" + ResourceManager.RMI_NAME_RM_CARS);
             System.out.println("WC bound to RMCars");
-            rmCustomers = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_CUSTOMERS);
+            rmCustomers = (ResourceManager) Naming.lookup("//localhost:" + prop.getProperty(ResourceManager.RMI_NAME_RM_CUSTOMERS + ".port") + "/" + ResourceManager.RMI_NAME_RM_CUSTOMERS);
             System.out.println("WC bound to RMCustomers");
-            rmReservations = (ResourceManager) Naming.lookup(rmiPort + ResourceManager.RMI_NAME_RM_RESERVATIONS);
+            rmReservations = (ResourceManager) Naming.lookup("//localhost:" + prop.getProperty(ResourceManager.RMI_NAME_RM_RESERVATIONS + ".port") + "/" + ResourceManager.RMI_NAME_RM_RESERVATIONS);
             System.out.println("WC bound to RMReservations");
-            tm = (TransactionManager) Naming.lookup(rmiPort + TransactionManager.RMIName);
+            tm = (TransactionManager) Naming.lookup("//localhost:" + prop.getProperty("tm.port") + "/" + TransactionManager.RMIName);
             System.out.println("WC bound to TM");
         } catch (Exception e) {
             System.err.println("WC cannot bind to some component:" + e);

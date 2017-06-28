@@ -31,7 +31,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
 
     protected static Registry _rmiRegistry = null;
     protected static String myRMIName;
-    protected static String dieTime;
+    protected static String dieTime = "";
 
     protected TransactionManager transactionManager = null;
     protected Set<Integer> txInProcessing = ConcurrentHashMap.newKeySet();
@@ -105,7 +105,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
     private Set<Integer> loadTransactionLogs() {
         File transactionLog = new File(DATA_DIR + File.separator + TRANSACTION_LOG_FILENAME);
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(transactionLog))) {
-            return (HashSet<Integer>) ois.readObject();
+            return (ConcurrentHashMap.KeySetView) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
             logger.error("Failed to load transaction log!", e);
             return null;
@@ -186,11 +186,11 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
             return false;
         }
 
-        String rmiPort = prop.getProperty("transactionManager.port");
+        String rmiPort = prop.getProperty("tm.port");
         if (rmiPort == null) {
             rmiPort = "";
         } else if (!rmiPort.equals("")) {
-            rmiPort = "//:" + rmiPort + "/";
+            rmiPort = "//localhost:" + rmiPort + "/";
         }
 
         try {
@@ -257,7 +257,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
-    public String getRMIName() {
+    public String getRMIName() throws RemoteException {
         return myRMIName;
     }
 
@@ -466,7 +466,8 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
             txTable.lock(key, 1);
             try {
                 item = (T) item.clone();
-            } catch (CloneNotSupportedException ignored) {}
+            } catch (CloneNotSupportedException ignored) {
+            }
             item.setDeleted(true);
             txTable.put(item);
 
@@ -522,12 +523,12 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
                             table.put(item);
                         }
                     }
-    
+
                     // persistence the table
                     if (!saveTable(table, new File(DATA_DIR + File.separator + tableName))) {
                         throw new RemoteException("Can't write table to disk!");
                     }
-                    
+
                     // cleanup the file of transaction shadow table
                     File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
                     if (!txTableFile.delete()) {
@@ -544,12 +545,12 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
                 tables.remove(txId);
             }
         }
-        
+
         // unlock all resources occupied by the transaction
         if (!lockManager.unlockAll(txId)) {
             throw new RuntimeException("Can not unlock resources of transaction " + txId + ".");
         }
-        
+
         // remove the transaction from the processing transaction set, its thread-safe
         txInProcessing.remove(txId);
     }

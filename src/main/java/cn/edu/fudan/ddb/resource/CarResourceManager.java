@@ -41,6 +41,7 @@ public class CarResourceManager extends ResourceManagerImpl<Car> {
             _rmiRegistry.bind(myRMIName, carResourceManager);
             System.out.println(myRMIName + " bound");
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println(myRMIName + " not bound:" + e);
             System.exit(1);
         }

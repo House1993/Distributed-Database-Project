@@ -2,7 +2,9 @@ package cn.edu.fudan.ddb.client;
 
 import cn.edu.fudan.ddb.workflow.WorkflowController;
 
+import java.io.FileInputStream;
 import java.rmi.Naming;
+import java.util.Properties;
 
 /**
  * A toy client of the Distributed Travel Reservation System.
@@ -11,7 +13,15 @@ import java.rmi.Naming;
 public class Client {
 
     public static void main(String args[]) {
-        String rmiPort = System.getProperty("rmiPort");
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream("conf/ddb.conf"));
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            return;
+        }
+
+        String rmiPort = prop.getProperty("wc.port");
         if (rmiPort == null) {
             rmiPort = "";
         } else if (!rmiPort.equals("")) {
@@ -52,6 +62,7 @@ public class Client {
             }
 
         } catch (Exception e) {
+            e.printStackTrace();
             System.err.println("Received exception:" + e);
             System.exit(1);
         }

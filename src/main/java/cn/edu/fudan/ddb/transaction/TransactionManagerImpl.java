@@ -2,15 +2,18 @@ package cn.edu.fudan.ddb.transaction;
 
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
+import cn.edu.fudan.ddb.resource.ResourceManager;
 import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.io.*;
 import java.rmi.Naming;
-import java.rmi.RMISecurityManager;
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
+import java.rmi.registry.Registry;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * Transaction Manager for the Distributed Travel Reservation System.
@@ -23,7 +26,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     /**
      * the RMs that related to each transaction
      */
-    private HashMap<Integer, HashMap<String, ResourceManagerImpl>> rms;
+    private HashMap<Integer, HashMap<String, ResourceManager>> rms;
 
     /**
      * the committed transaction ids
@@ -34,15 +37,33 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
     private boolean dieTMBeforeCommit;
     private boolean dieTMAfterCommit;
 
-    public static void main(String args[]) {
-        System.setSecurityManager(new RMISecurityManager());
+    protected static Registry _rmiRegistry = null;
 
-        String rmiPort = System.getProperty("rmiPort");
-        if (rmiPort == null) {
-            rmiPort = "";
-        } else if (!rmiPort.equals("")) {
-            rmiPort = "//:" + rmiPort + "/";
+    public static void main(String args[]) {
+//        System.setSecurityManager(new RMISecurityManager());
+
+        Properties prop = new Properties();
+        try {
+            prop.load(new FileInputStream("conf/ddb.conf"));
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            return;
         }
+
+        String rmiPort = prop.getProperty("tm.port");
+
+        try {
+            _rmiRegistry = LocateRegistry.createRegistry(Integer.parseInt(rmiPort));
+        } catch (RemoteException e2) {
+            e2.printStackTrace();
+            return;
+        }
+
+//        if (rmiPort == null) {
+//            rmiPort = "";
+//        } else if (!rmiPort.equals("")) {
+        rmiPort = "//localhost:" + rmiPort + "/";
+//        }
 
         try {
             TransactionManagerImpl obj = new TransactionManagerImpl();
@@ -73,15 +94,17 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         }
     }
 
-    public void setDieTMBeforeCommit() {
+    @Override
+    public void setDieTMBeforeCommit() throws RemoteException {
         dieTMBeforeCommit = true;
     }
 
-    public void setDieTMAfterCommit() {
+    @Override
+    public void setDieTMAfterCommit() throws RemoteException {
         dieTMAfterCommit = true;
     }
 
-    public void enlist(int xid, ResourceManagerImpl rm) throws RemoteException, InvalidTransactionException {
+    public void enlist(int xid, ResourceManager rm) throws RemoteException, InvalidTransactionException {
         if (!rms.containsKey(xid)) {
             if (committed.contains(xid)) {
                 throw new InvalidTransactionException(xid, "the transaction has already committed");
@@ -118,7 +141,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
 
         for (int trytime = 1; trytime <= 10; ++trytime) {
             boolean cannot = false;
-            for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
+            for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
                 if (!f.getValue().prepare(xid)) {
                     System.out.println("RM " + f.getValue().getRMIName() + " has not prepared for transaction " + xid + " on " + trytime + "th try");
                     cannot = true;
@@ -150,7 +173,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                     System.out.println("TM should die after commit");
                     dieNow();
                 }
-                for (Map.Entry<String, ResourceManagerImpl> i : rms.get(xid).entrySet()) {
+                for (Map.Entry<String, ResourceManager> i : rms.get(xid).entrySet()) {
                     i.getValue().commit(xid);
                 }
                 synchronized (rms) {
@@ -171,7 +194,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
             }
         }
 
-        for (Map.Entry<String, ResourceManagerImpl> f : rms.get(xid).entrySet()) {
+        for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
             f.getValue().abort(xid);
         }
         synchronized (rms) {

@@ -133,7 +133,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             return (RMTable<T>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            logger.error("Failed to load table!", e);
+            logger.debug("There is no table on disk, creating a new one instead.");
             return null;
         }
     }
@@ -548,15 +548,15 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
 
                     // cleanup the file of transaction shadow table
                     File txTableFile = new File(DATA_DIR + File.separator + txId + File.separator + tableName);
-                    if (!txTableFile.delete()) {
-                        logger.error("Failed to delete transaction table file {}!", txTableFile);
+                    if (txTableFile.exists() && !txTableFile.delete()) {
+                        logger.warn("Failed to delete transaction table file {}!", txTableFile);
                     }
                 }
 
                 // cleanup the dir containing transaction shadow tables, which assumed to be empty. 
                 File txTableFilesDir = new File(DATA_DIR + File.separator + txId);
-                if (!txTableFilesDir.delete()) {
-                    logger.error("Failed to delete transaction tables dir {}!", txTableFilesDir);
+                if (txTableFilesDir.exists() && !txTableFilesDir.delete()) {
+                    logger.debug("Failed to delete transaction tables dir {}!", txTableFilesDir);
                 }
                 // delete in-memory shadow table of transaction
                 tables.remove(txId);

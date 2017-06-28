@@ -28,6 +28,8 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
 
     private static final String DATA_DIR = "data";
     private static final String TRANSACTION_LOG_FILENAME = "txInProcessing.log";
+    private static final String TM_COMMIT_FILENAME = "commit";
+
 
     protected static Registry _rmiRegistry = null;
     protected static String myRMIName;
@@ -73,7 +75,9 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         File[] dataFiles = dataDir.listFiles();
         if (dataFiles != null) {
             for (File dataFile : dataFiles) {
-                if (!dataFile.isDirectory() && !dataFile.getName().equals(TRANSACTION_LOG_FILENAME)) {
+                if (!dataFile.isDirectory()
+                        && !dataFile.getName().equals(TRANSACTION_LOG_FILENAME)
+                        && !dataFile.getName().equals(TM_COMMIT_FILENAME)) {
                     getTable(dataFile.getName());
                 }
             }
@@ -129,13 +133,13 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(file))) {
             return (RMTable<T>) ois.readObject();
         } catch (IOException | ClassNotFoundException e) {
-            logger.error("Failed to load transaction log!", e);
+            logger.error("Failed to load table!", e);
             return null;
         }
     }
 
     private boolean saveTable(RMTable<T> table, File file) {
-        if (!file.getParentFile().mkdirs()) {
+        if (!file.getParentFile().exists() && !file.getParentFile().mkdirs()) {
             logger.error("Failed to create directory {}!", file.getParentFile());
             return false;
         }
@@ -199,7 +203,17 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
 
             for (Integer transaction : txInProcessing) {
                 logger.info("RM {} re-enlist to TM with transaction {}.", myRMIName, transaction);
-                transactionManager.enlist(transaction, this);
+                if (transactionManager.hasCommitted(transaction)) {
+                    commit(transaction);
+                    logger.info("{} has been committed.", transaction);
+                } else {
+                    try {
+                        transactionManager.enlist(transaction, this);
+                    } catch (InvalidTransactionException e) {
+                        abort(transaction);
+                        logger.info("{} has been aborted.", transaction);
+                    }
+                }
             }
             if (dieTime.equals("AfterEnlist")) {
                 dieNow();
@@ -219,6 +233,8 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
                 try {
                     if (transactionManager != null) {
                         transactionManager.testConnection();
+                    } else {
+                        throw new Exception();
                     }
                 } catch (Exception ignored) {
                     transactionManager = null;

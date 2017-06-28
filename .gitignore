@@ -6,3 +6,4 @@ target/
 #ppt
 *.ppt
 data/
+*.log

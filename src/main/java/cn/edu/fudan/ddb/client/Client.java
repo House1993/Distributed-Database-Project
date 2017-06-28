@@ -47,6 +47,10 @@ public class Client {
                 System.err.println("Add room failed");
             }
 
+            if (!wc.newCustomer(xid, "John")) {
+                System.err.println("Add customer failed");
+            }
+
             System.out.println("Flight 347 has " +
                     wc.queryFlight(xid, "347") +
                     " seats.");

@@ -3,7 +3,6 @@ package cn.edu.fudan.ddb.transaction;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 import cn.edu.fudan.ddb.resource.ResourceManager;
-import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.io.*;
 import java.rmi.Naming;
@@ -32,7 +31,7 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
      * the committed transaction ids
      */
     private HashSet<Integer> committed;
-    private static final String committedPath = "TM/commit";
+    private static final String committedPath = "data/commit";
 
     private boolean dieTMBeforeCommit;
     private boolean dieTMAfterCommit;
@@ -162,7 +161,11 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                 synchronized (committed) {
                     committed.add(xid);
                     try {
-                        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(committedPath));
+                        File path = new File(committedPath);
+                        if (!path.getParentFile().exists()) {
+                            path.getParentFile().mkdirs();
+                        }
+                        ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(path));
                         oos.writeObject(committed);
                     } catch (IOException e) {
                         System.out.println("Fail to write committed");

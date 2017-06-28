@@ -3,7 +3,6 @@ package cn.edu.fudan.ddb.transaction;
 import cn.edu.fudan.ddb.exception.InvalidTransactionException;
 import cn.edu.fudan.ddb.exception.TransactionAbortedException;
 import cn.edu.fudan.ddb.resource.ResourceManager;
-import cn.edu.fudan.ddb.resource.ResourceManagerImpl;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;

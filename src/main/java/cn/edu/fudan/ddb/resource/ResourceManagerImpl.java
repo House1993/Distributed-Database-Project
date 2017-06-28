@@ -257,6 +257,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         }
     }
 
+    @Override
     public String getRMIName() throws RemoteException {
         return myRMIName;
     }

@@ -141,10 +141,15 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         for (int trytime = 1; trytime <= 10; ++trytime) {
             boolean cannot = false;
             for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
-                if (!f.getValue().prepare(xid)) {
-                    System.out.println("RM " + f.getValue().getRMIName() + " has not prepared for transaction " + xid + " on " + trytime + "th try");
+                try {
+                    if (!f.getValue().prepare(xid)) {
+                        System.out.println("RM " + f.getValue().getRMIName() + " has not prepared for transaction " + xid + " on " + trytime + "th try");
+                        cannot = true;
+                        break;
+                    }
+                } catch (RemoteException re) {
+                    System.out.println("RM die");
                     cannot = true;
-                    break;
                 }
             }
             if (cannot) {
@@ -177,7 +182,11 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
                     dieNow();
                 }
                 for (Map.Entry<String, ResourceManager> i : rms.get(xid).entrySet()) {
-                    i.getValue().commit(xid);
+                    try {
+                        i.getValue().commit(xid);
+                    } catch (RemoteException e) {
+                        System.out.println("RM die");
+                    }
                 }
                 synchronized (rms) {
                     rms.remove(xid);
@@ -198,7 +207,10 @@ public class TransactionManagerImpl extends java.rmi.server.UnicastRemoteObject 
         }
 
         for (Map.Entry<String, ResourceManager> f : rms.get(xid).entrySet()) {
-            f.getValue().abort(xid);
+            try {
+                f.getValue().abort(xid);
+            } catch (RemoteException e) {
+            }
         }
         synchronized (rms) {
             rms.remove(xid);

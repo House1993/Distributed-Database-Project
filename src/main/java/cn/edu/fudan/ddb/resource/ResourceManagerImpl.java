@@ -63,6 +63,7 @@ public class ResourceManagerImpl<T extends ResourceItem> extends UnicastRemoteOb
         if (lastTransactions != null) {
             txInProcessing = lastTransactions;
         }
+        logger.info("Tx in processing: {}", Arrays.toString(txInProcessing.toArray()));
 
         File dataDir = new File(DATA_DIR);
         if (!dataDir.exists()) {

@@ -100,6 +100,17 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         } catch (TransactionAbortedException | InvalidTransactionException e) {
             System.out.println(e.getMessage());
             return false;
+        } catch (RemoteException e) {
+            while (!reconnect()) {
+                // would be better to sleep a while
+                try {
+                    Thread.sleep(500);
+                } catch (Exception ignored) {
+                }
+            }
+            if (!tm.hasCommitted(xid)) {
+                return false;
+            }
         }
         System.out.println("Successful committing transaction " + xid);
         return true;
@@ -110,6 +121,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
             tm.abort(xid, "Manual");
         } catch (TransactionAbortedException | InvalidTransactionException e) {
             System.out.println(e.getMessage());
+            throw new InvalidTransactionException(xid, "Transaction aborted");
         }
     }
 
@@ -117,11 +129,11 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     // ADMINISTRATIVE INTERFACE
     public boolean addFlight(int xid, String flightNum, int numSeats, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (numSeats < 0) {
-            System.out.println("Add " + numSeats + " seats to a flight");
+            tm.abort(xid, "Add " + numSeats + " seats to a flight");
             return false;
         }
         if (flightNum == null) {
-            System.out.println("Flight number is null");
+            tm.abort(xid, "Flight number is null");
             return false;
         }
         try {
@@ -146,18 +158,18 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean deleteFlight(int xid, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (flightNum == null) {
-            System.out.println("Flight number is null");
+            tm.abort(xid, "Flight number is null");
             return false;
         }
         try {
             Object check = rmFlights.query(xid, FlightsTable, flightNum);
             if (check == null || ((Flight) check).isDeleted()) {
-                System.out.println("The flight which number is " + flightNum + " does not exist");
+                tm.abort(xid, "The flight which number is " + flightNum + " does not exist");
                 return false;
             }
             Flight tmp = (Flight) check;
             if (tmp.getNumAvail() != tmp.getNumSeats()) {
-                System.out.println("Can not delete the flight because of someone's reservations");
+                tm.abort(xid, "Can not delete the flight because of someone's reservations");
                 return false;
             }
             rmFlights.delete(xid, FlightsTable, flightNum);
@@ -170,11 +182,11 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean addRooms(int xid, String location, int numRooms, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (numRooms < 0) {
-            System.out.println("Add " + numRooms + " rooms to a hotel");
+            tm.abort(xid, "Add " + numRooms + " rooms to a hotel");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
@@ -199,24 +211,24 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean deleteRooms(int xid, String location, int numRooms) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (numRooms < 0) {
-            System.out.println("Delete " + numRooms + " rooms to a hotel");
+            tm.abort(xid, "Delete " + numRooms + " rooms to a hotel");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
             Object check = rmRooms.query(xid, RoomsTable, location);
             if (check == null || ((Hotel) check).isDeleted()) {
-                System.out.println("The hotel which location is " + location + " does not exist");
+                tm.abort(xid, "The hotel which location is " + location + " does not exist");
                 return false;
             }
             Hotel tmp = (Hotel) check;
             int total = tmp.getNumRooms() - numRooms;
             int avail = tmp.getNumAvail() - numRooms;
             if (avail < 0) {
-                System.out.println("The hotel which location is " + location + " does not have enough rooms to delete");
+                tm.abort(xid, "The hotel which location is " + location + " does not have enough rooms to delete");
                 return false;
             }
             rmRooms.update(xid, RoomsTable, location, new Hotel(location, tmp.getPrice(), total, avail));
@@ -229,11 +241,11 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean addCars(int xid, String location, int numCars, int price) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (numCars < 0) {
-            System.out.println("Add " + numCars + " cars");
+            tm.abort(xid, "Add " + numCars + " cars");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
@@ -252,30 +264,33 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         } catch (DeadlockException e) {
             tm.abort(xid, "Timeout");
             return false;
+        } catch (RemoteException e) {
+            tm.abort(xid, "RM die");
+            return false;
         }
         return true;
     }
 
     public boolean deleteCars(int xid, String location, int numCars) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (numCars < 0) {
-            System.out.println("Delete " + numCars + " cars");
+            tm.abort(xid, "Delete " + numCars + " cars");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
             Object check = rmCars.query(xid, CarsTable, location);
             if (check == null || ((Car) check).isDeleted()) {
-                System.out.println("There is no car in " + location);
+                tm.abort(xid, "There is no car in " + location);
                 return false;
             }
             Car tmp = (Car) check;
             int total = tmp.getNumCars() - numCars;
             int avail = tmp.getNumAvail() - numCars;
             if (avail < 0) {
-                System.out.println("There is not enough cars to delete in " + location);
+                tm.abort(xid, "There is not enough cars to delete in " + location);
                 return false;
             }
             rmCars.update(xid, CarsTable, location, new Car(location, tmp.getPrice(), total, avail));
@@ -288,7 +303,7 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean newCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (custName == null) {
-            System.out.println("Customer name is null");
+            tm.abort(xid, "Customer name is null");
             return false;
         }
         try {
@@ -306,13 +321,13 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean deleteCustomer(int xid, String custName) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (custName == null) {
-            System.out.println("Customer name is null");
+            tm.abort(xid, "Customer name is null");
             return false;
         }
         try {
             Customer check = rmCustomers.query(xid, CustomersTable, custName);
             if (check == null || check.isDeleted()) {
-                System.out.println("The customer which named " + custName + " does not exist");
+                tm.abort(xid, "The customer which named " + custName + " does not exist");
                 return false;
             }
             rmCustomers.delete(xid, CustomersTable, custName);
@@ -469,26 +484,26 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
     // RESERVATION INTERFACE
     public boolean reserveFlight(int xid, String custName, String flightNum) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (custName == null) {
-            System.out.println("Customer name is null");
+            tm.abort(xid, "Customer name is null");
             return false;
         }
         if (flightNum == null) {
-            System.out.println("Flight number is null");
+            tm.abort(xid, "Flight number is null");
             return false;
         }
         try {
             Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
-                System.out.println("There is no customer named " + custName);
+                tm.abort(xid, "There is no customer named " + custName);
                 return false;
             }
             Flight checkFlight = rmFlights.query(xid, FlightsTable, flightNum);
             if (checkFlight == null || checkFlight.isDeleted()) {
-                System.out.println("There is no flight which number is " + flightNum);
+                tm.abort(xid, "There is no flight which number is " + flightNum);
                 return false;
             }
             if (checkFlight.getNumAvail() == 0) {
-                System.out.println("There is no enough seat on flight which number is " + flightNum);
+                tm.abort(xid, "There is no enough seat on flight which number is " + flightNum);
                 return false;
             }
             rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.FLIGHT, flightNum));
@@ -502,22 +517,22 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean reserveCar(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (custName == null) {
-            System.out.println("Customer name is null");
+            tm.abort(xid, "Customer name is null");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
             Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
-                System.out.println("There is no customer named " + custName);
+                tm.abort(xid, "There is no customer named " + custName);
                 return false;
             }
             Car checkCar = rmCars.query(xid, CarsTable, location);
             if (checkCar == null || checkCar.isDeleted() || checkCar.getNumAvail() == 0) {
-                System.out.println("There is no car in " + location);
+                tm.abort(xid, "There is no car in " + location);
                 return false;
             }
             rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.CAR, location));
@@ -531,22 +546,22 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
 
     public boolean reserveRoom(int xid, String custName, String location) throws RemoteException, TransactionAbortedException, InvalidTransactionException {
         if (custName == null) {
-            System.out.println("Customer name is null");
+            tm.abort(xid, "Customer name is null");
             return false;
         }
         if (location == null) {
-            System.out.println("Location is null");
+            tm.abort(xid, "Location is null");
             return false;
         }
         try {
             Customer checkCust = rmCustomers.query(xid, CustomersTable, custName);
             if (checkCust == null || checkCust.isDeleted()) {
-                System.out.println("There is no customer named " + custName);
+                tm.abort(xid, "There is no customer named " + custName);
                 return false;
             }
             Hotel checkRoom = rmRooms.query(xid, RoomsTable, location);
             if (checkRoom == null || checkRoom.isDeleted() || checkRoom.getNumAvail() == 0) {
-                System.out.println("There is no room in " + location);
+                tm.abort(xid, "There is no room in " + location);
                 return false;
             }
             rmReservations.insert(xid, ReservationsTable, new Reservation(custName, ReservationType.HOTEL, location));
@@ -562,18 +577,21 @@ public class WorkflowControllerImpl extends java.rmi.server.UnicastRemoteObject 
         for (Object flightNum : flightNumList) {
             boolean res = reserveFlight(xid, custName, (String) flightNum);
             if (!res) {
+                tm.abort(xid, "Flight can't be reserved");
                 return false;
             }
         }
         if (needCar) {
             boolean res = reserveCar(xid, custName, location);
             if (!res) {
+                tm.abort(xid, "Car can't be reserved");
                 return false;
             }
         }
         if (needRoom) {
             boolean res = reserveRoom(xid, custName, location);
             if (!res) {
+                tm.abort(xid, "Room can't be reserved");
                 return false;
             }
         }

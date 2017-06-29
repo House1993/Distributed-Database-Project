@@ -7,11 +7,9 @@ import java.rmi.Naming;
 import java.util.Properties;
 
 /**
- * A toy client of the Distributed Travel Reservation System.
+ * Created by house on 6/29/17.
  */
-
-public class Client {
-
+public class ClientException {
     public static void main(String args[]) {
         Properties prop = new Properties();
         try {
@@ -46,7 +44,7 @@ public class Client {
             if (!wc.addRooms(xid, "SFO", 500, 150)) {
                 System.err.println("Add room failed");
             }
-            if (!wc.addCars(xid, "SFO", 100, 200)) {
+            if (!wc.addCars(xid, "SFO", 0, 200)) {
                 System.err.println("Add car failed");
             }
 
@@ -80,7 +78,6 @@ public class Client {
 
         } catch (Exception e) {
             e.printStackTrace();
-            System.err.println("Received exception:" + e);
             System.exit(1);
         }
     }
